@@ -589,7 +589,7 @@
                 await db.ref('users/' + userCredential.user.uid).set({
                     displayName: fullName,
                     email: email,
-                    balance: 500000,
+                    balance: 0,
                     blocked: false,
                     isAdmin: email === 'qn781159@gmail.com',
                     createdAt: new Date().toISOString()
