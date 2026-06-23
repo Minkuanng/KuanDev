@@ -149,7 +149,7 @@
             --link-color: #007bff;
         }
 
-        /* ===== THEMES ===== */
+        /* ===== 10 THEMES ===== */
         .theme-galaxy {
             --bg-body: #0a0a1a;
             --bg-card: rgba(18,18,42,0.95);
@@ -234,6 +234,74 @@
             --wallet-bg: #3e0a1a;
             --hover-bg: #5a1a2a;
             --link-color: #ff4a7a;
+        }
+        .theme-neon {
+            --bg-body: #0a0a0a;
+            --bg-card: rgba(18,18,18,0.95);
+            --text-primary: #00ff88;
+            --text-secondary: #e8e8e8;
+            --text-muted: #666666;
+            --border-color: rgba(51,51,51,0.5);
+            --input-bg: #1a1a1a;
+            --input-border: #333333;
+            --shadow: 0 10px 40px rgba(0,0,0,0.6);
+            --btn-bg: linear-gradient(135deg, #00cc66, #00ff88);
+            --btn-hover: linear-gradient(135deg, #00ff88, #00ccff);
+            --shadow-popup: 0 8px 30px rgba(0,0,0,0.8);
+            --wallet-bg: #1a1a1a;
+            --hover-bg: #2a2a2a;
+            --link-color: #00ff88;
+        }
+        .theme-lavender {
+            --bg-body: #1a0a2a;
+            --bg-card: rgba(34,26,58,0.95);
+            --text-primary: #d4a8ff;
+            --text-secondary: #e8e8e8;
+            --text-muted: #7a5a9a;
+            --border-color: rgba(58,42,90,0.5);
+            --input-bg: #2a1a3e;
+            --input-border: #3a2a5a;
+            --shadow: 0 10px 40px rgba(0,0,0,0.4);
+            --btn-bg: linear-gradient(135deg, #7a5a9a, #b87aff);
+            --btn-hover: linear-gradient(135deg, #b87aff, #d4a8ff);
+            --shadow-popup: 0 8px 30px rgba(0,0,0,0.6);
+            --wallet-bg: #2a1a3e;
+            --hover-bg: #3a2a5a;
+            --link-color: #b87aff;
+        }
+        .theme-mint {
+            --bg-body: #0a1a12;
+            --bg-card: rgba(15,42,26,0.95);
+            --text-primary: #7fffd4;
+            --text-secondary: #e8e8e8;
+            --text-muted: #3a7a6a;
+            --border-color: rgba(26,74,58,0.5);
+            --input-bg: #0d2a1a;
+            --input-border: #1a4a3a;
+            --shadow: 0 10px 40px rgba(0,0,0,0.4);
+            --btn-bg: linear-gradient(135deg, #3a7a6a, #4abfa0);
+            --btn-hover: linear-gradient(135deg, #4abfa0, #7fffd4);
+            --shadow-popup: 0 8px 30px rgba(0,0,0,0.6);
+            --wallet-bg: #0d2a1a;
+            --hover-bg: #1a4a3a;
+            --link-color: #4abfa0;
+        }
+        .theme-coffee {
+            --bg-body: #1a0f0a;
+            --bg-card: rgba(34,26,18,0.95);
+            --text-primary: #d4b896;
+            --text-secondary: #e8e8e8;
+            --text-muted: #7a6a5a;
+            --border-color: rgba(58,42,26,0.5);
+            --input-bg: #2a1a12;
+            --input-border: #3a2a1a;
+            --shadow: 0 10px 40px rgba(0,0,0,0.4);
+            --btn-bg: linear-gradient(135deg, #7a6a5a, #b8987a);
+            --btn-hover: linear-gradient(135deg, #b8987a, #d4b896);
+            --shadow-popup: 0 8px 30px rgba(0,0,0,0.6);
+            --wallet-bg: #2a1a12;
+            --hover-bg: #3a2a1a;
+            --link-color: #b8987a;
         }
 
         body.dark-mode {
@@ -690,7 +758,7 @@
         </button>
 
         <div class="links">
-            <a onclick="window.location.href='sign-up.html'">📝 Đăng ký tài khoản</a>
+            <a onclick="window.location.href='signup.html'">📝 Đăng ký tài khoản</a>
         </div>
     </div>
 
@@ -750,9 +818,13 @@
                 document.body.classList.remove('dark-mode');
             }
             
-            // Theme color (galaxy, ocean, forest, sunset, cherry)
+            // Theme color (10 themes)
             const savedTheme = localStorage.getItem('theme_name') || 'default';
-            document.body.classList.remove('theme-galaxy', 'theme-ocean', 'theme-forest', 'theme-sunset', 'theme-cherry');
+            document.body.classList.remove(
+                'theme-galaxy', 'theme-ocean', 'theme-forest', 
+                'theme-sunset', 'theme-cherry', 'theme-neon',
+                'theme-lavender', 'theme-mint', 'theme-coffee'
+            );
             if (savedTheme !== 'default') {
                 document.body.classList.add('theme-' + savedTheme);
             }
@@ -947,7 +1019,7 @@
                     showMessage('✅ Xác thực thành công! Đang chuyển hướng...', 'success');
                     hideLoading();
                     setTimeout(() => {
-                        window.location.href = '../index.html';
+                        window.location.href = 'home.html';
                     }, 1000);
                 } else {
                     attempts--;
@@ -1058,7 +1130,7 @@
                 hideLoading();
                 showMessage('✅ Đăng nhập thành công!', 'success');
                 setTimeout(() => {
-                    window.location.href = '../index.html';
+                    window.location.href = 'home.html';
                 }, 1000);
                 
             } catch (error) {
@@ -1124,7 +1196,7 @@
                 hideLoading();
                 showMessage('✅ Đăng nhập thành công!', 'success');
                 setTimeout(() => {
-                    window.location.href = '../index.html';
+                    window.location.href = 'home.html';
                 }, 1000);
                 
             } catch (error) {
@@ -1163,7 +1235,7 @@
                     return;
                 }
                 
-                window.location.href = '../index.html';
+                window.location.href = 'home.html';
             }
         });
 
@@ -1186,10 +1258,6 @@
         // Focus vào email
         emailInput.focus();
         
-        console.log('✅ Đăng nhập với 2FA đã sẵn sàng!');
-        console.log('🔒 Tài khoản có 2FA sẽ bị chặn truy cập shop nếu chưa xác thực');
-        console.log('⏱️ Kiểm tra 2FA ngay lập tức, không chờ đợi');
-        console.log('📋 Điều khoản và Chính sách đã được thêm vào!');
     </script>
 </body>
 </html>
