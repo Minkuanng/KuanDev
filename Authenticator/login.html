@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng Nhập</title>
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    
+    <!-- ===== TỰ XÂY DỰNG OTP LIB (KHÔNG CẦN CDN) ===== -->
+    <script>
+        // ===== SIMPLE OTP IMPLEMENTATION =====
+        class SimpleOTP {
+            constructor() {
+                this.authenticator = {
+                    check: (token, secret) => {
+                        return this.verifyTOTP(token, secret);
+                    },
+                    generate: (secret) => {
+                        return this.generateTOTP(secret);
+                    }
+                };
+            }
+
+            base32Decode(base32) {
+                const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+                const bytes = [];
+                let bits = 0;
+                let value = 0;
+                
+                for (let i = 0; i < base32.length; i++) {
+                    const char = base32[i].toUpperCase();
+                    const idx = alphabet.indexOf(char);
+                    if (idx === -1) continue;
+                    
+                    value = (value << 5) | idx;
+                    bits += 5;
+                    
+                    if (bits >= 8) {
+                        bytes.push((value >> (bits - 8)) & 0xFF);
+                        bits -= 8;
+                    }
+                }
+                
+                return new Uint8Array(bytes);
+            }
+
+            async hmacSha1(key, data) {
+                const keyData = typeof key === 'string' ? this.base32Decode(key) : key;
+                const cryptoKey = await crypto.subtle.importKey(
+                    'raw',
+                    keyData,
+                    { name: 'HMAC', hash: 'SHA-1' },
+                    false,
+                    ['sign']
+                );
+                const signature = await crypto.subtle.sign(
+                    'HMAC',
+                    cryptoKey,
+                    data
+                );
+                return new Uint8Array(signature);
+            }
+
+            dynamicTruncation(hmac) {
+                const offset = hmac[hmac.length - 1] & 0xF;
+                const binary = ((hmac[offset] & 0x7F) << 24) |
+                              ((hmac[offset + 1] & 0xFF) << 16) |
+                              ((hmac[offset + 2] & 0xFF) << 8) |
+                              (hmac[offset + 3] & 0xFF);
+                return binary % 1000000;
+            }
+
+            async generateHOTP(secret, counter) {
+                const counterBytes = new Uint8Array(8);
+                for (let i = 7; i >= 0; i--) {
+                    counterBytes[i] = counter & 0xFF;
+                    counter = counter >> 8;
+                }
+                
+                const hmac = await this.hmacSha1(secret, counterBytes);
+                const otp = this.dynamicTruncation(hmac);
+                return String(otp).padStart(6, '0');
+            }
+
+            async generateTOTP(secret, window = 0) {
+                const time = Math.floor(Date.now() / 30000) + window;
+                return await this.generateHOTP(secret, time);
+            }
+
+            async verifyTOTP(token, secret) {
+                if (!token || token.length !== 6) return false;
+                if (!secret || secret.length < 10) return false;
+                
+                try {
+                    const windows = [0, -1, 1];
+                    for (const w of windows) {
+                        const generated = await this.generateTOTP(secret, w);
+                        if (generated === token) {
+                            return true;
+                        }
+                    }
+                    return false;
+                } catch (error) {
+                    console.error('OTP verification error:', error);
+                    return false;
+                }
+            }
+
+            generateSecret() {
+                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+                let secret = '';
+                for (let i = 0; i < 16; i++) {
+                    secret += chars.charAt(Math.floor(Math.random() * chars.length));
+                }
+                return secret;
+            }
+        }
+
+        const otp = new SimpleOTP();
+        const authenticator = otp.authenticator;
+        console.log('✅ Simple OTP loaded successfully');
+    </script>
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+
+        /* ===== THEME VARIABLES ===== */
+        :root {
+            --bg-body: #f0f7ff;
+            --bg-card: rgba(255,255,255,0.95);
+            --text-primary: #5a8fb5;
+            --text-secondary: #2c5a7a;
+            --text-muted: #8ab3d4;
+            --border-color: rgba(225,240,255,0.5);
+            --input-bg: #f8fcff;
+            --input-border: #e3eef9;
+            --shadow: 0 10px 40px rgba(176,216,255,0.2);
+            --btn-bg: linear-gradient(135deg, #8fc1e0, #7ab0d4);
+            --btn-hover: linear-gradient(135deg, #7ab0d4, #6aa3c9);
+            --shadow-popup: 0 8px 30px rgba(0,0,0,0.15);
+            --wallet-bg: #f0f7ff;
+            --hover-bg: #f0f7ff;
+            --danger: #e74c6f;
+            --success: #27ae60;
+            --warning: #f5a623;
+            --link-color: #007bff;
+        }
+
+        /* ===== THEMES ===== */
+        .theme-galaxy {
+            --bg-body: #0a0a1a;
+            --bg-card: rgba(18,18,42,0.95);
+            --text-primary: #c8b8ff;
+            --text-secondary: #e8e8e8;
+            --text-muted: #6a5a9a;
+            --border-color: rgba(42,42,90,0.5);
+            --input-bg: #1a1a3e;
+            --input-border: #2a2a5a;
+            --shadow: 0 10px 40px rgba(0,0,0,0.4);
+            --btn-bg: linear-gradient(135deg, #6a5a9a, #8a7aff);
+            --btn-hover: linear-gradient(135deg, #8a7aff, #a89aff);
+            --shadow-popup: 0 8px 30px rgba(0,0,0,0.6);
+            --wallet-bg: #1a1a3e;
+            --hover-bg: #2a2a5a;
+            --link-color: #8a7aff;
+        }
+        .theme-ocean {
+            --bg-body: #0a1628;
+            --bg-card: rgba(15,42,74,0.95);
+            --text-primary: #7fc8ff;
+            --text-secondary: #e8e8e8;
+            --text-muted: #3a6a8a;
+            --border-color: rgba(26,58,106,0.5);
+            --input-bg: #0d2847;
+            --input-border: #1a3a6a;
+            --shadow: 0 10px 40px rgba(0,0,0,0.4);
+            --btn-bg: linear-gradient(135deg, #3a6a8a, #4a9aff);
+            --btn-hover: linear-gradient(135deg, #4a9aff, #5aaaff);
+            --shadow-popup: 0 8px 30px rgba(0,0,0,0.6);
+            --wallet-bg: #0d2847;
+            --hover-bg: #1a3a6a;
+            --link-color: #4a9aff;
+        }
+        .theme-forest {
+            --bg-body: #0a1a0a;
+            --bg-card: rgba(15,42,15,0.95);
+            --text-primary: #7fdf7f;
+            --text-secondary: #e8e8e8;
+            --text-muted: #3a7a3a;
+            --border-color: rgba(26,74,26,0.5);
+            --input-bg: #0d2a0d;
+            --input-border: #1a4a1a;
+            --shadow: 0 10px 40px rgba(0,0,0,0.4);
+            --btn-bg: linear-gradient(135deg, #3a7a3a, #4abf4a);
+            --btn-hover: linear-gradient(135deg, #4abf4a, #5adf5a);
+            --shadow-popup: 0 8px 30px rgba(0,0,0,0.6);
+            --wallet-bg: #0d2a0d;
+            --hover-bg: #1a4a1a;
+            --link-color: #4abf4a;
+        }
+        .theme-sunset {
+            --bg-body: #1a0a0a;
+            --bg-card: rgba(42,18,10,0.95);
+            --text-primary: #ffb87f;
+            --text-secondary: #e8e8e8;
+            --text-muted: #9a6a3a;
+            --border-color: rgba(90,42,26,0.5);
+            --input-bg: #3e1a0a;
+            --input-border: #5a2a1a;
+            --shadow: 0 10px 40px rgba(0,0,0,0.4);
+            --btn-bg: linear-gradient(135deg, #9a6a3a, #ff8a4a);
+            --btn-hover: linear-gradient(135deg, #ff8a4a, #ff9a5a);
+            --shadow-popup: 0 8px 30px rgba(0,0,0,0.6);
+            --wallet-bg: #3e1a0a;
+            --hover-bg: #5a2a1a;
+            --link-color: #ff8a4a;
+        }
+        .theme-cherry {
+            --bg-body: #1a0a12;
+            --bg-card: rgba(42,10,22,0.95);
+            --text-primary: #ff7fa8;
+            --text-secondary: #e8e8e8;
+            --text-muted: #9a3a5a;
+            --border-color: rgba(90,26,42,0.5);
+            --input-bg: #3e0a1a;
+            --input-border: #5a1a2a;
+            --shadow: 0 10px 40px rgba(0,0,0,0.4);
+            --btn-bg: linear-gradient(135deg, #9a3a5a, #ff4a7a);
+            --btn-hover: linear-gradient(135deg, #ff4a7a, #ff5a8a);
+            --shadow-popup: 0 8px 30px rgba(0,0,0,0.6);
+            --wallet-bg: #3e0a1a;
+            --hover-bg: #5a1a2a;
+            --link-color: #ff4a7a;
+        }
+
+        body.dark-mode {
+            --bg-body: #1a1a2e;
+            --bg-card: rgba(26,26,46,0.95);
+            --text-primary: #8fc1e0;
+            --text-secondary: #e8e8e8;
+            --text-muted: #6a8a9a;
+            --border-color: rgba(42,58,90,0.5);
+            --input-bg: #1a2a4a;
+            --input-border: #2a3a5a;
+            --shadow: 0 10px 40px rgba(0,0,0,0.4);
+            --btn-bg: linear-gradient(135deg, #3a6a8a, #2a5a7a);
+            --btn-hover: linear-gradient(135deg, #4a7a9a, #3a6a8a);
+            --shadow-popup: 0 8px 30px rgba(0,0,0,0.5);
+            --wallet-bg: #1a2a4a;
+            --hover-bg: #1a2a4a;
+            --link-color: #5a9acf;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: var(--bg-body);
+            padding: 20px;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        .container {
+            background: var(--bg-card);
+            padding: 40px 35px;
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            width: 100%;
+            max-width: 440px;
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
+            position: relative;
+        }
+
+        h2 { text-align: center; color: var(--text-primary); font-size: 28px; margin-bottom: 8px; font-weight: 600; transition: color 0.3s; }
+        .subtitle { text-align: center; color: var(--text-muted); font-size: 14px; margin-bottom: 28px; transition: color 0.3s; }
+        .form-group { margin-bottom: 18px; }
+        label { display: block; color: var(--text-muted); font-size: 14px; font-weight: 500; margin-bottom: 6px; transition: color 0.3s; }
+        .password-wrapper { position: relative; width: 100%; }
+
+        input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--input-border);
+            border-radius: 12px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            background: var(--input-bg);
+            color: var(--text-secondary);
+        }
+
+        .password-wrapper input { padding-right: 45px; }
+        input:focus { outline: none; border-color: #8fc1e0; box-shadow: 0 0 0 4px rgba(143,193,224,0.15); background: #ffffff; }
+        body.dark-mode input:focus { border-color: #5a8fb5; box-shadow: 0 0 0 4px rgba(90,143,181,0.15); background: #1a2a4a; }
+        input::placeholder { color: var(--text-muted); }
+
+        .toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            color: var(--text-muted);
+            font-size: 18px;
+            transition: color 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .toggle-password:hover { color: #7aadcc; }
+        .toggle-password svg { width: 20px; height: 20px; }
+
+        .forgot-password-link { text-align: right; margin-top: 6px; }
+        .forgot-password-link a { color: var(--text-muted); text-decoration: none; font-size: 13px; transition: color 0.3s; font-weight: 500; cursor: pointer; }
+        .forgot-password-link a:hover { color: var(--text-primary); text-decoration: underline; }
+
+        .btn-primary {
+            width: 100%;
+            padding: 14px;
+            background: var(--btn-bg);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 6px;
+            position: relative;
+        }
+
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(143,193,224,0.3); background: var(--btn-hover); }
+        .btn-primary:active { transform: translateY(0); }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+        .btn-google {
+            width: 100%;
+            padding: 12px;
+            background: var(--input-bg);
+            color: var(--text-secondary);
+            border: 2px solid var(--input-border);
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-google:hover { background: var(--bg-card); border-color: #8fc1e0; transform: translateY(-2px); box-shadow: 0 4px 15px rgba(143,193,224,0.15); }
+        .btn-google:active { transform: translateY(0); }
+
+        .links { text-align: center; margin-top: 18px; }
+        .links a { color: var(--text-muted); text-decoration: none; font-size: 14px; transition: color 0.3s; font-weight: 500; cursor: pointer; }
+        .links a:hover { color: var(--text-primary); text-decoration: underline; }
+
+        .message {
+            padding: 12px 16px;
+            border-radius: 10px;
+            margin-bottom: 18px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .message.error { display: block; background: #fef0f2; color: #c0392b; border: 1px solid #fdd5d9; }
+        body.dark-mode .message.error { background: #2a1a1a; color: #e8747a; border: 1px solid #4a2a2a; }
+        .message.success { display: block; background: #eaf7ed; color: #27ae60; border: 1px solid #c8e6d0; }
+        body.dark-mode .message.success { background: #1a2a1a; color: #7ab87a; border: 1px solid #2a4a2a; }
+        .message.info { display: block; background: #e7f3ff; color: #004085; border: 1px solid #b8daff; }
+        body.dark-mode .message.info { background: #1a2a3a; color: #7ab8d4; border: 1px solid #2a4a6a; }
+        .message.warning { display: block; background: #fff3cd; color: #856404; border: 1px solid #ffc107; }
+        body.dark-mode .message.warning { background: #2a2a1a; color: #d4b87a; border: 1px solid #6a5a2a; }
+
+        .divider {
+            text-align: center;
+            margin: 22px 0 20px;
+            color: var(--text-muted);
+            font-size: 13px;
+            position: relative;
+            transition: color 0.3s;
+        }
+
+        .divider::before, .divider::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 30%;
+            height: 1px;
+            background: var(--input-border);
+            transition: background 0.3s;
+        }
+
+        .divider::before { left: 0; }
+        .divider::after { right: 0; }
+
+        /* ===== ĐIỀU KHOẢN & CHÍNH SÁCH ===== */
+        .terms-section {
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-color);
+            transition: border-color 0.3s;
+        }
+
+        .terms-checkbox {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            cursor: pointer;
+            padding: 4px 0;
+        }
+
+        .terms-checkbox input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            min-width: 18px;
+            margin-top: 2px;
+            accent-color: var(--text-primary);
+            cursor: pointer;
+            border-radius: 4px;
+            border: 2px solid var(--input-border);
+            transition: all 0.3s;
+        }
+
+        .terms-checkbox input[type="checkbox"]:checked {
+            background-color: var(--text-primary);
+            border-color: var(--text-primary);
+        }
+
+        .terms-checkbox .terms-text {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            transition: color 0.3s;
+        }
+
+        .terms-checkbox .terms-text .link {
+            color: var(--link-color);
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: color 0.3s;
+            border-bottom: 1px dashed transparent;
+        }
+
+        .terms-checkbox .terms-text .link:hover {
+            border-bottom-color: var(--link-color);
+        }
+
+        .terms-checkbox .terms-text .link-policy {
+            color: var(--link-color);
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: color 0.3s;
+            border-bottom: 1px dashed transparent;
+        }
+
+        .terms-checkbox .terms-text .link-policy:hover {
+            border-bottom-color: var(--link-color);
+        }
+
+        .terms-error {
+            color: #e74c6f;
+            font-size: 12px;
+            margin-top: 4px;
+            display: none;
+        }
+
+        .terms-error.show {
+            display: block;
+        }
+
+        /* ===== 2FA MODAL ===== */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(6px);
+            z-index: 500;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 28px 30px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: var(--shadow-popup);
+            border: 1px solid var(--border-color);
+            animation: modalIn 0.3s ease;
+        }
+
+        @keyframes modalIn {
+            from { transform: scale(0.95) translateY(-20px); opacity: 0; }
+            to { transform: scale(1) translateY(0); opacity: 1; }
+        }
+
+        .modal h3 { color: var(--text-primary); margin-bottom: 4px; text-align: center; font-size: 22px; transition: color 0.3s; }
+        .modal .modal-desc { text-align: center; color: var(--text-muted); font-size: 13px; margin-bottom: 18px; transition: color 0.3s; }
+        
+        .modal .modal-row { display: flex; gap: 10px; margin-bottom: 14px; align-items: center; justify-content: center; flex-wrap: wrap; }
+        .modal .modal-row label { color: var(--text-muted); font-size: 14px; font-weight: 600; transition: color 0.3s; }
+        .modal .modal-row input { 
+            padding: 10px 14px; 
+            border: 2px solid var(--border-color); 
+            border-radius: 10px; 
+            font-size: 24px; 
+            font-weight: 700;
+            background: var(--bg-card); 
+            color: var(--text-primary); 
+            transition: background 0.3s, border-color 0.3s, color 0.3s;
+            text-align: center;
+            letter-spacing: 10px;
+            width: 200px;
+            height: 56px;
+        }
+        .modal .modal-row input:focus { outline: none; border-color: var(--text-secondary); box-shadow: 0 0 0 3px rgba(90,143,181,0.15); }
+        .modal .modal-row input.error { border-color: #e74c6f; box-shadow: 0 0 0 3px rgba(231,76,111,0.15); }
+        .modal .modal-row input.success { border-color: #27ae60; box-shadow: 0 0 0 3px rgba(39,174,96,0.15); }
+        
+        .modal .modal-actions { display: flex; gap: 10px; margin-top: 16px; }
+        .modal .modal-actions button { flex: 1; padding: 12px; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; transition: 0.3s; }
+        .modal .modal-actions .btn-confirm { background: linear-gradient(135deg, #8fc1e0, #5a8fb5); color: white; }
+        .modal .modal-actions .btn-confirm:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(90,143,181,0.3); }
+        .modal .modal-actions .btn-confirm:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .modal .modal-actions .btn-cancel { background: var(--wallet-bg); color: var(--text-muted); border: 1px solid var(--border-color); }
+        .modal .modal-actions .btn-cancel:hover { background: var(--hover-bg); }
+
+        .modal .error-msg {
+            color: #e74c6f;
+            font-size: 13px;
+            text-align: center;
+            margin-top: 8px;
+            display: none;
+        }
+
+        .modal .error-msg.show { display: block; }
+
+        .modal .attempts {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 12px;
+            margin-top: 6px;
+        }
+
+        .otp-timer {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 13px;
+            margin-bottom: 12px;
+        }
+
+        .otp-timer span {
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        /* ===== LOADING OVERLAY ===== */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(8px);
+            z-index: 999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255,255,255,0.1);
+            border-radius: 50%;
+            border-top-color: #5a8fb5;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: white;
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        .loading-sub {
+            color: rgba(255,255,255,0.6);
+            font-size: 14px;
+        }
+
+        @media (max-width: 480px) {
+            .container { padding: 30px 20px; max-width: 100%; }
+            h2 { font-size: 24px; }
+            .btn-primary, .btn-google { font-size: 15px; padding: 13px; }
+            .modal { padding: 20px; }
+            .modal .modal-row input { width: 160px; height: 48px; font-size: 20px; letter-spacing: 8px; }
+            .loading-spinner { width: 40px; height: 40px; }
+            .loading-text { font-size: 16px; }
+            .terms-checkbox .terms-text { font-size: 12px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>🔐 Đăng Nhập</h2>
+        <p class="subtitle">Chào mừng bạn trở lại!</p>
+        <div id="message" class="message"></div>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label>📧 Email</label>
+                <input type="email" id="email" placeholder="Nhập email của bạn" required>
+            </div>
+            <div class="form-group">
+                <label>🔑 Mật khẩu</label>
+                <div class="password-wrapper">
+                    <input type="password" id="password" placeholder="Nhập mật khẩu" required>
+                    <button type="button" class="toggle-password" id="togglePassword">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                    </button>
+                </div>
+                <div class="forgot-password-link">
+                    <a onclick="window.location.href='forgot-password.html'">Quên mật khẩu?</a>
+                </div>
+            </div>
+
+            <!-- ===== ĐIỀU KHOẢN & CHÍNH SÁCH ===== -->
+            <div class="terms-section">
+                <label class="terms-checkbox">
+                    <input type="checkbox" id="termsCheckbox">
+                    <span class="terms-text">
+                        Tôi đồng ý với 
+                        <span class="link" onclick="event.preventDefault(); window.location.href='clause.html'">Điều khoản</span>
+                        và 
+                        <span class="link-policy" onclick="event.preventDefault(); window.location.href='policy.html'">Chính sách</span>
+                        của chúng tôi
+                    </span>
+                </label>
+                <div class="terms-error" id="termsError">⚠️ Vui lòng đồng ý với Điều khoản và Chính sách để tiếp tục!</div>
+            </div>
+
+            <button type="submit" class="btn-primary" id="loginBtn">🚀 Đăng Nhập</button>
+        </form>
+
+        <div class="divider">hoặc</div>
+
+        <button id="googleLoginBtn" class="btn-google">
+            <svg width="20" height="20" viewBox="0 0 48 48">
+                <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z" />
+                <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z" />
+                <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z" />
+                <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z" />
+            </svg>
+            Đăng nhập với Google
+        </button>
+
+        <div class="links">
+            <a onclick="window.location.href='sign-up.html'">📝 Đăng ký tài khoản</a>
+        </div>
+    </div>
+
+    <!-- ===== LOADING OVERLAY ===== -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text" id="loadingText">⏳ Đang kiểm tra bảo mật...</div>
+        <div class="loading-sub" id="loadingSub">Vui lòng đợi trong giây lát</div>
+    </div>
+
+    <!-- ===== 2FA MODAL ===== -->
+    <div class="modal-overlay" id="twofaModal">
+        <div class="modal">
+            <h3>🔐 Xác thực 2 lớp</h3>
+            <p class="modal-desc">Nhập mã OTP từ Google Authenticator</p>
+            
+            <div class="otp-timer" id="otpTimer">
+                ⏱️ Mã có hiệu lực trong <span id="timerCount">30</span> giây
+            </div>
+            
+            <div class="modal-row">
+                <label>OTP</label>
+                <input type="text" id="otpInput" placeholder="000000" maxlength="6" inputmode="numeric" autocomplete="off" />
+            </div>
+            <div class="error-msg" id="otpError">❌ Mã OTP không đúng! Vui lòng thử lại.</div>
+            <div class="attempts" id="otpAttempts">Còn <span id="attemptCount">3</span> lần thử</div>
+            <div class="modal-actions">
+                <button class="btn-confirm" id="btnVerifyOTP" onclick="verifyOTPLogin()">✅ Xác nhận</button>
+                <button class="btn-cancel" onclick="closeOTPModal()">❌ Hủy</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== FIREBASE =====
+        const firebaseConfig = {
+            apiKey: "AIzaSyCPDDRt520fSynXCGrr2aF-KvpnS_ZuIm8",
+            authDomain: "shop-c6777.firebaseapp.com",
+            databaseURL: "https://shop-c6777-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "shop-c6777",
+            storageBucket: "shop-c6777.firebasestorage.app",
+            messagingSenderId: "43186563268",
+            appId: "1:43186563268:web:0d392ba57039a919670191",
+            measurementId: "G-445DCB6NV0"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        // ===== KHÔI PHỤC THEME =====
+        function applyTheme() {
+            // Dark mode
+            if (localStorage.getItem('theme') === 'dark') {
+                document.body.classList.add('dark-mode');
+            } else {
+                document.body.classList.remove('dark-mode');
+            }
+            
+            // Theme color (galaxy, ocean, forest, sunset, cherry)
+            const savedTheme = localStorage.getItem('theme_name') || 'default';
+            document.body.classList.remove('theme-galaxy', 'theme-ocean', 'theme-forest', 'theme-sunset', 'theme-cherry');
+            if (savedTheme !== 'default') {
+                document.body.classList.add('theme-' + savedTheme);
+            }
+        }
+
+        // Áp dụng theme ngay khi load
+        applyTheme();
+
+        // Lắng nghe thay đổi theme từ localStorage (khi settings thay đổi)
+        window.addEventListener('storage', function(e) {
+            if (e.key === 'theme' || e.key === 'theme_name') {
+                applyTheme();
+            }
+        });
+
+        // ===== DOM ELEMENTS =====
+        const loginForm = document.getElementById('loginForm');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const messageDiv = document.getElementById('message');
+        const googleLoginBtn = document.getElementById('googleLoginBtn');
+        const togglePasswordBtn = document.getElementById('togglePassword');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const termsCheckbox = document.getElementById('termsCheckbox');
+        const termsError = document.getElementById('termsError');
+
+        let pendingUser = null;
+        let pendingSecret = null;
+        let attempts = 3;
+        let isVerifying = false;
+        let timerInterval = null;
+        let timerCount = 30;
+
+        // ===== TOGGLE PASSWORD =====
+        let isPasswordVisible = false;
+        togglePasswordBtn.addEventListener('click', () => {
+            isPasswordVisible = !isPasswordVisible;
+            passwordInput.type = isPasswordVisible ? 'text' : 'password';
+            togglePasswordBtn.innerHTML = isPasswordVisible ?
+                `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                </svg>` :
+                `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>`;
+        });
+
+        // ===== HELPER FUNCTIONS =====
+        function showMessage(text, type) {
+            messageDiv.textContent = text;
+            messageDiv.className = 'message ' + type;
+            messageDiv.style.display = 'block';
+        }
+
+        function hideMessage() {
+            messageDiv.style.display = 'none';
+        }
+
+        function showLoading(text, sub) {
+            document.getElementById('loadingText').textContent = text || '⏳ Đang kiểm tra bảo mật...';
+            document.getElementById('loadingSub').textContent = sub || 'Vui lòng đợi trong giây lát';
+            loadingOverlay.classList.add('active');
+        }
+
+        function hideLoading() {
+            loadingOverlay.classList.remove('active');
+        }
+
+        async function checkUserBlocked(uid) {
+            try {
+                const snapshot = await db.ref('users/' + uid + '/blocked').once('value');
+                return snapshot.val() === true;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        // ===== OTP TIMER =====
+        function startTimer() {
+            timerCount = 30;
+            document.getElementById('timerCount').textContent = timerCount;
+            
+            if (timerInterval) clearInterval(timerInterval);
+            
+            timerInterval = setInterval(() => {
+                timerCount--;
+                document.getElementById('timerCount').textContent = timerCount;
+                
+                if (timerCount <= 0) {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                    document.getElementById('otpError').textContent = '⏱️ Mã OTP đã hết hạn! Vui lòng nhập mã mới.';
+                    document.getElementById('otpError').classList.add('show');
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+        }
+
+        // ===== SHOW OTP MODAL =====
+        function showOTPModal(secret) {
+            pendingSecret = secret;
+            attempts = 3;
+            document.getElementById('otpInput').value = '';
+            document.getElementById('otpError').classList.remove('show');
+            document.getElementById('otpInput').classList.remove('error', 'success');
+            document.getElementById('attemptCount').textContent = attempts;
+            document.getElementById('otpAttempts').style.display = 'block';
+            document.getElementById('btnVerifyOTP').disabled = false;
+            document.getElementById('btnVerifyOTP').innerHTML = '✅ Xác nhận';
+            document.getElementById('twofaModal').classList.add('active');
+            
+            startTimer();
+            
+            setTimeout(() => document.getElementById('otpInput').focus(), 300);
+        }
+
+        function closeOTPModal() {
+            stopTimer();
+            document.getElementById('twofaModal').classList.remove('active');
+            document.getElementById('otpInput').value = '';
+            document.getElementById('otpError').classList.remove('show');
+            
+            if (pendingUser) {
+                auth.signOut();
+                pendingUser = null;
+                pendingSecret = null;
+                showMessage('🔒 Đã hủy xác thực. Vui lòng đăng nhập lại!', 'warning');
+            }
+            isVerifying = false;
+            document.getElementById('btnVerifyOTP').disabled = false;
+            document.getElementById('loginBtn').disabled = false;
+            document.getElementById('loginBtn').innerHTML = '🚀 Đăng Nhập';
+            hideLoading();
+        }
+
+        // ===== VERIFY OTP =====
+        async function verifyOTPLogin() {
+            if (isVerifying) return;
+            
+            const otp = document.getElementById('otpInput').value.trim();
+            if (otp.length !== 6 || !/^\d{6}$/.test(otp)) {
+                document.getElementById('otpError').textContent = '❌ Vui lòng nhập đúng mã OTP 6 số!';
+                document.getElementById('otpError').classList.add('show');
+                document.getElementById('otpInput').classList.add('error');
+                return;
+            }
+
+            isVerifying = true;
+            document.getElementById('btnVerifyOTP').disabled = true;
+            document.getElementById('btnVerifyOTP').innerHTML = '⏳ Đang xác thực...';
+
+            try {
+                if (!pendingSecret && pendingUser) {
+                    const snapshot = await db.ref('users/' + pendingUser.uid + '/twofaSecret').once('value');
+                    pendingSecret = snapshot.val();
+                }
+
+                if (!pendingSecret) {
+                    throw new Error('Không tìm thấy secret!');
+                }
+
+                const isValid = await authenticator.check(otp, pendingSecret);
+
+                if (isValid) {
+                    stopTimer();
+                    document.getElementById('otpInput').classList.remove('error');
+                    document.getElementById('otpInput').classList.add('success');
+                    document.getElementById('otpError').classList.remove('show');
+                    document.getElementById('btnVerifyOTP').innerHTML = '✅ Thành công';
+                    
+                    const isBlocked = await checkUserBlocked(pendingUser.uid);
+                    if (isBlocked) {
+                        await auth.signOut();
+                        showMessage('🚫 Tài khoản của bạn đã bị khóa!', 'error');
+                        pendingUser = null;
+                        pendingSecret = null;
+                        closeOTPModal();
+                        isVerifying = false;
+                        document.getElementById('btnVerifyOTP').innerHTML = '✅ Xác nhận';
+                        hideLoading();
+                        return;
+                    }
+
+                    showMessage('✅ Xác thực thành công! Đang chuyển hướng...', 'success');
+                    hideLoading();
+                    setTimeout(() => {
+                        window.location.href = '../index.html';
+                    }, 1000);
+                } else {
+                    attempts--;
+                    document.getElementById('attemptCount').textContent = attempts;
+                    document.getElementById('otpInput').classList.add('error');
+                    document.getElementById('otpError').textContent = '❌ Mã OTP không đúng! Còn ' + attempts + ' lần thử.';
+                    document.getElementById('otpError').classList.add('show');
+                    
+                    if (attempts <= 0) {
+                        document.getElementById('otpError').textContent = '❌ Bạn đã nhập sai quá nhiều lần.';
+                        setTimeout(async () => {
+                            await auth.signOut();
+                            pendingUser = null;
+                            pendingSecret = null;
+                            closeOTPModal();
+                            showMessage('Đã hết lượt thử OTP. Vui lòng đăng nhập lại!', 'error');
+                            isVerifying = false;
+                            document.getElementById('btnVerifyOTP').innerHTML = '✅ Xác nhận';
+                            hideLoading();
+                        }, 1500);
+                        return;
+                    }
+                    document.getElementById('otpInput').value = '';
+                    document.getElementById('otpInput').focus();
+                    startTimer();
+                }
+            } catch (error) {
+                console.error('Lỗi verify OTP:', error);
+                document.getElementById('otpError').textContent = '❌ Lỗi hệ thống: ' + error.message;
+                document.getElementById('otpError').classList.add('show');
+            }
+
+            isVerifying = false;
+            document.getElementById('btnVerifyOTP').disabled = false;
+            document.getElementById('btnVerifyOTP').innerHTML = '✅ Xác nhận';
+        }
+
+        // ===== KIỂM TRA 2FA NHANH =====
+        async function checkTwoFA(user) {
+            try {
+                const snapshot = await db.ref('users/' + user.uid + '/twofaEnabled').once('value');
+                return snapshot.val() === true;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        // ===== ĐĂNG NHẬP EMAIL =====
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideMessage();
+            
+            // ===== KIỂM TRA ĐIỀU KHOẢN =====
+            if (!termsCheckbox.checked) {
+                termsError.classList.add('show');
+                termsCheckbox.style.borderColor = '#e74c6f';
+                setTimeout(() => {
+                    termsError.classList.remove('show');
+                    termsCheckbox.style.borderColor = '';
+                }, 3000);
+                return;
+            }
+            termsError.classList.remove('show');
+            
+            const email = emailInput.value.trim();
+            const password = passwordInput.value.trim();
+
+            if (!email || !password) {
+                showMessage('⚠️ Vui lòng nhập đầy đủ thông tin!', 'error');
+                return;
+            }
+
+            const submitBtn = document.getElementById('loginBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '⏳ Đang xử lý...';
+            
+            showLoading('🔍 Đang kiểm tra bảo mật...', 'Vui lòng đợi trong giây lát');
+
+            try {
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                
+                const isBlocked = await checkUserBlocked(userCredential.user.uid);
+                if (isBlocked) {
+                    await auth.signOut();
+                    hideLoading();
+                    showMessage('🚫 Tài khoản của bạn đã bị khóa!', 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '🚀 Đăng Nhập';
+                    return;
+                }
+
+                const hasTwoFA = await checkTwoFA(userCredential.user);
+                
+                if (hasTwoFA) {
+                    const secretSnap = await db.ref('users/' + userCredential.user.uid + '/twofaSecret').once('value');
+                    pendingUser = userCredential.user;
+                    pendingSecret = secretSnap.val();
+                    
+                    hideLoading();
+                    showOTPModal(pendingSecret);
+                    showMessage('🔐 Vui lòng nhập mã OTP để xác thực!', 'info');
+                    
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '🚀 Đăng Nhập';
+                    return;
+                }
+
+                hideLoading();
+                showMessage('✅ Đăng nhập thành công!', 'success');
+                setTimeout(() => {
+                    window.location.href = '../index.html';
+                }, 1000);
+                
+            } catch (error) {
+                hideLoading();
+                let errorMessage = '❌ Đăng nhập thất bại! ';
+                switch (error.code) {
+                    case 'auth/user-not-found': errorMessage += 'Email không tồn tại.'; break;
+                    case 'auth/wrong-password': errorMessage += 'Mật khẩu không đúng.'; break;
+                    case 'auth/invalid-email': errorMessage += 'Email không hợp lệ.'; break;
+                    case 'auth/too-many-requests': errorMessage += 'Quá nhiều yêu cầu. Thử lại sau.'; break;
+                    default: errorMessage += error.message;
+                }
+                showMessage(errorMessage, 'error');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '🚀 Đăng Nhập';
+            }
+        });
+
+        // ===== ĐĂNG NHẬP GOOGLE =====
+        googleLoginBtn.addEventListener('click', async () => {
+            hideMessage();
+            
+            // ===== KIỂM TRA ĐIỀU KHOẢN =====
+            if (!termsCheckbox.checked) {
+                termsError.classList.add('show');
+                termsCheckbox.style.borderColor = '#e74c6f';
+                setTimeout(() => {
+                    termsError.classList.remove('show');
+                    termsCheckbox.style.borderColor = '';
+                }, 3000);
+                return;
+            }
+            termsError.classList.remove('show');
+            
+            showLoading('🔍 Đang kiểm tra bảo mật...', 'Vui lòng đợi trong giây lát');
+
+            try {
+                const provider = new firebase.auth.GoogleAuthProvider();
+                provider.setCustomParameters({ prompt: 'select_account' });
+                const result = await auth.signInWithPopup(provider);
+                
+                const isBlocked = await checkUserBlocked(result.user.uid);
+                if (isBlocked) {
+                    await auth.signOut();
+                    hideLoading();
+                    showMessage('🚫 Tài khoản của bạn đã bị khóa!', 'error');
+                    return;
+                }
+
+                const hasTwoFA = await checkTwoFA(result.user);
+                
+                if (hasTwoFA) {
+                    const secretSnap = await db.ref('users/' + result.user.uid + '/twofaSecret').once('value');
+                    pendingUser = result.user;
+                    pendingSecret = secretSnap.val();
+                    
+                    hideLoading();
+                    showOTPModal(pendingSecret);
+                    showMessage('🔐 Vui lòng nhập mã OTP để xác thực!', 'info');
+                    return;
+                }
+
+                hideLoading();
+                showMessage('✅ Đăng nhập thành công!', 'success');
+                setTimeout(() => {
+                    window.location.href = '../index.html';
+                }, 1000);
+                
+            } catch (error) {
+                hideLoading();
+                let errorMessage = '❌ Đăng nhập Google thất bại! ';
+                if (error.code === 'auth/popup-closed-by-user') {
+                    errorMessage += 'Bạn đã đóng cửa sổ đăng nhập.';
+                } else {
+                    errorMessage += error.message;
+                }
+                showMessage(errorMessage, 'error');
+            }
+        });
+
+        // ===== AUTO REDIRECT =====
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                if (document.getElementById('twofaModal').classList.contains('active')) {
+                    return;
+                }
+                
+                const isBlocked = await checkUserBlocked(user.uid);
+                if (isBlocked) {
+                    await auth.signOut();
+                    showMessage('🚫 Tài khoản của bạn đã bị khóa!', 'error');
+                    return;
+                }
+
+                const hasTwoFA = await checkTwoFA(user);
+                if (hasTwoFA) {
+                    const secretSnap = await db.ref('users/' + user.uid + '/twofaSecret').once('value');
+                    pendingUser = user;
+                    pendingSecret = secretSnap.val();
+                    showOTPModal(pendingSecret);
+                    showMessage('🔐 Vui lòng nhập mã OTP để xác thực!', 'info');
+                    return;
+                }
+                
+                window.location.href = '../index.html';
+            }
+        });
+
+        // ===== ENTER KEY CHO OTP =====
+        document.getElementById('otpInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                verifyOTPLogin();
+            }
+        });
+
+        // ===== AUTO CLEAR ERROR =====
+        document.getElementById('otpInput').addEventListener('input', function(e) {
+            this.value = this.value.replace(/\D/g, '');
+            if (this.value.length === 6) {
+                document.getElementById('otpError').classList.remove('show');
+                this.classList.remove('error');
+            }
+        });
+
+        // Focus vào email
+        emailInput.focus();
+        
+        console.log('✅ Đăng nhập với 2FA đã sẵn sàng!');
+        console.log('🔒 Tài khoản có 2FA sẽ bị chặn truy cập shop nếu chưa xác thực');
+        console.log('⏱️ Kiểm tra 2FA ngay lập tức, không chờ đợi');
+        console.log('📋 Điều khoản và Chính sách đã được thêm vào!');
+    </script>
+</body>
+</html>
