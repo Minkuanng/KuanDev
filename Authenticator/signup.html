@@ -637,7 +637,7 @@
                     await db.ref('users/' + result.user.uid).set({
                         displayName: result.user.displayName || 'Người dùng',
                         email: result.user.email,
-                        balance: 500000,
+                        balance: 0,
                         blocked: false,
                         isAdmin: result.user.email === 'qn781159@gmail.com',
                         createdAt: new Date().toISOString()
@@ -662,9 +662,6 @@
         // Focus vào ô Họ tên
         fullNameInput.focus();
         
-        console.log('✅ Đăng ký đã được cập nhật với Điều khoản & Chính sách!');
-        console.log('🎨 10 themes: galaxy, ocean, forest, sunset, cherry, neon, lavender, mint, coffee');
-        console.log('🎨 Theme tự động đồng bộ với settings!');
     </script>
 </body>
 </html>
