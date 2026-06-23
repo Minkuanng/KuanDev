@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cài đặt</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+
+        :root {
+            --bg-body: #f0f7ff;
+            --bg-card: #fff;
+            --bg-header: #fff;
+            --text-primary: #2c5a7a;
+            --text-secondary: #5a8fb5;
+            --text-muted: #8ab3d4;
+            --border-color: #e3eef9;
+            --shadow: 0 2px 10px rgba(0,0,0,0.05);
+            --shadow-popup: 0 8px 30px rgba(0,0,0,0.15);
+            --wallet-bg: #f0f7ff;
+            --hover-bg: #f0f7ff;
+            --toggle-bg: #dce8f2;
+            --toggle-active: #27ae60;
+            --success: #27ae60;
+            --danger: #e74c6f;
+            --modal-bg: rgba(0,0,0,0.5);
+        }
+
+        .theme-galaxy { --bg-body: #0a0a1a; --bg-card: #12122a; --bg-header: #1a1a3e; --text-primary: #c8b8ff; --text-secondary: #8a7aff; --text-muted: #6a5a9a; --border-color: #2a2a5a; --shadow: 0 2px 10px rgba(0,0,0,0.4); --shadow-popup: 0 8px 30px rgba(0,0,0,0.6); --wallet-bg: #1a1a3e; --hover-bg: #2a2a5a; --toggle-bg: #2a2a5a; --modal-bg: rgba(0,0,0,0.7); }
+        .theme-ocean { --bg-body: #0a1628; --bg-card: #0f2a4a; --bg-header: #0d2847; --text-primary: #7fc8ff; --text-secondary: #4a9aff; --text-muted: #3a6a8a; --border-color: #1a3a6a; --shadow: 0 2px 10px rgba(0,0,0,0.4); --shadow-popup: 0 8px 30px rgba(0,0,0,0.6); --wallet-bg: #0d2847; --hover-bg: #1a3a6a; --toggle-bg: #1a3a6a; --modal-bg: rgba(0,0,0,0.7); }
+        .theme-forest { --bg-body: #0a1a0a; --bg-card: #0f2a0f; --bg-header: #0d2a0d; --text-primary: #7fdf7f; --text-secondary: #4abf4a; --text-muted: #3a7a3a; --border-color: #1a4a1a; --shadow: 0 2px 10px rgba(0,0,0,0.4); --shadow-popup: 0 8px 30px rgba(0,0,0,0.6); --wallet-bg: #0d2a0d; --hover-bg: #1a4a1a; --toggle-bg: #1a4a1a; --modal-bg: rgba(0,0,0,0.7); }
+        .theme-sunset { --bg-body: #1a0a0a; --bg-card: #2a120a; --bg-header: #3e1a0a; --text-primary: #ffb87f; --text-secondary: #ff8a4a; --text-muted: #9a6a3a; --border-color: #5a2a1a; --shadow: 0 2px 10px rgba(0,0,0,0.4); --shadow-popup: 0 8px 30px rgba(0,0,0,0.6); --wallet-bg: #3e1a0a; --hover-bg: #5a2a1a; --toggle-bg: #5a2a1a; --modal-bg: rgba(0,0,0,0.7); }
+        .theme-cherry { --bg-body: #1a0a12; --bg-card: #2a0a16; --bg-header: #3e0a1a; --text-primary: #ff7fa8; --text-secondary: #ff4a7a; --text-muted: #9a3a5a; --border-color: #5a1a2a; --shadow: 0 2px 10px rgba(0,0,0,0.4); --shadow-popup: 0 8px 30px rgba(0,0,0,0.6); --wallet-bg: #3e1a0a; --hover-bg: #5a1a2a; --toggle-bg: #5a1a2a; --modal-bg: rgba(0,0,0,0.7); }
+        .theme-neon { --bg-body: #0a0a0a; --bg-card: #121212; --bg-header: #1a1a1a; --text-primary: #00ff88; --text-secondary: #00ccff; --text-muted: #666; --border-color: #333; --shadow: 0 2px 10px rgba(0,0,0,0.6); --shadow-popup: 0 8px 30px rgba(0,0,0,0.8); --wallet-bg: #1a1a1a; --hover-bg: #2a2a2a; --toggle-bg: #333; --modal-bg: rgba(0,0,0,0.8); }
+        .theme-lavender { --bg-body: #1a0a2a; --bg-card: #221a3a; --bg-header: #2a1a3e; --text-primary: #d4a8ff; --text-secondary: #b87aff; --text-muted: #7a5a9a; --border-color: #3a2a5a; --shadow: 0 2px 10px rgba(0,0,0,0.4); --shadow-popup: 0 8px 30px rgba(0,0,0,0.6); --wallet-bg: #2a1a3e; --hover-bg: #3a2a5a; --toggle-bg: #3a2a5a; --modal-bg: rgba(0,0,0,0.7); }
+        .theme-mint { --bg-body: #0a1a12; --bg-card: #0f2a1a; --bg-header: #0d2a1a; --text-primary: #7fffd4; --text-secondary: #4abfa0; --text-muted: #3a7a6a; --border-color: #1a4a3a; --shadow: 0 2px 10px rgba(0,0,0,0.4); --shadow-popup: 0 8px 30px rgba(0,0,0,0.6); --wallet-bg: #0d2a1a; --hover-bg: #1a4a3a; --toggle-bg: #1a4a3a; --modal-bg: rgba(0,0,0,0.7); }
+        .theme-coffee { --bg-body: #1a0f0a; --bg-card: #221a12; --bg-header: #2a1a12; --text-primary: #d4b896; --text-secondary: #b8987a; --text-muted: #7a6a5a; --border-color: #3a2a1a; --shadow: 0 2px 10px rgba(0,0,0,0.4); --shadow-popup: 0 8px 30px rgba(0,0,0,0.6); --wallet-bg: #2a1a12; --hover-bg: #3a2a1a; --toggle-bg: #3a2a1a; --modal-bg: rgba(0,0,0,0.7); }
+
+        body.dark-mode {
+            --bg-body: #1a1a2e;
+            --bg-card: #1a1a2e;
+            --bg-header: #16213e;
+            --text-primary: #e8e8e8;
+            --text-secondary: #8fc1e0;
+            --text-muted: #6a8a9a;
+            --border-color: #2a3a5a;
+            --shadow: 0 2px 10px rgba(0,0,0,0.3);
+            --shadow-popup: 0 8px 30px rgba(0,0,0,0.5);
+            --wallet-bg: #1a2a4a;
+            --hover-bg: #1a2a4a;
+            --toggle-bg: #2a3a5a;
+            --modal-bg: rgba(0,0,0,0.7);
+        }
+
+        body { background: var(--bg-body); min-height: 100vh; transition: 0.3s; }
+
+        .header { background: var(--bg-header); padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: 100; transition: 0.3s; }
+        .header-left { display: flex; align-items: center; gap: 16px; }
+        .logo { font-size: 20px; font-weight: 700; color: var(--text-primary); transition: 0.3s; }
+        .logo span { color: var(--text-secondary); }
+
+        .menu-icon { cursor: pointer; padding: 6px 10px; border-radius: 8px; background: var(--wallet-bg); border: 1px solid var(--border-color); display: flex; align-items: center; gap: 6px; transition: 0.3s; }
+        .menu-icon:hover { background: var(--hover-bg); }
+        .menu-icon .bar { display: block; width: 20px; height: 2px; background: var(--text-secondary); border-radius: 2px; margin: 2px 0; }
+        .menu-icon .menu-text { font-size: 11px; color: var(--text-secondary); font-weight: 600; }
+
+        .header-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .wallet { background: var(--wallet-bg); padding: 4px 14px; border-radius: 20px; border: 1px solid var(--border-color); display: flex; flex-direction: column; align-items: flex-end; line-height: 1.4; transition: 0.3s; }
+        .wallet .vnd { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+        .wallet .usd { font-size: 11px; color: var(--text-muted); font-weight: 500; }
+        .wallet .usd span { color: var(--text-secondary); font-weight: 600; }
+
+        .bell-icon { width: 32px; height: 32px; cursor: pointer; border-radius: 50%; background: var(--wallet-bg); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; transition: 0.3s; position: relative; font-size: 16px; }
+        .bell-icon:hover { background: var(--hover-bg); }
+        .bell-icon .bell-dot { width: 8px; height: 8px; background: #e74c6f; border-radius: 50%; position: absolute; top: 2px; right: 4px; border: 2px solid var(--bg-header); display: none; }
+        .bell-icon .bell-dot.show { display: block; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.2); } }
+
+        .dot-menu { width: 36px; height: 36px; cursor: pointer; border-radius: 50%; background: var(--wallet-bg); border: 1px solid var(--border-color); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; transition: 0.3s; padding: 6px; }
+        .dot-menu:hover { background: var(--hover-bg); }
+        .dot-menu .dot { width: 4px; height: 4px; background: var(--text-secondary); border-radius: 50%; }
+
+        .popup { position: absolute; top: 48px; right: 0; background: var(--bg-card); border-radius: 12px; box-shadow: var(--shadow-popup); min-width: 180px; padding: 6px 0; border: 1px solid var(--border-color); opacity: 0; visibility: hidden; transform: translateY(-10px); transition: 0.3s; z-index: 200; }
+        .popup.active { opacity: 1; visibility: visible; transform: translateY(0); }
+        .popup-item { padding: 10px 18px; color: var(--text-primary); font-size: 13px; cursor: pointer; transition: 0.3s; display: flex; align-items: center; gap: 12px; border: none; background: none; width: 100%; font-weight: 500; }
+        .popup-item:hover { background: var(--hover-bg); }
+        .popup-divider { height: 1px; background: var(--border-color); margin: 4px 12px; }
+        .popup-item.logout { color: #e74c6f; }
+        .settings-wrapper { position: relative; }
+
+        .notif-popup { position: fixed; top: 60px; right: 16px; background: var(--bg-card); border-radius: 12px; box-shadow: var(--shadow-popup); min-width: 280px; max-width: 360px; max-height: 350px; overflow-y: auto; padding: 12px 0; border: 1px solid var(--border-color); z-index: 300; opacity: 0; visibility: hidden; transform: translateY(-10px); transition: 0.3s; }
+        .notif-popup.active { opacity: 1; visibility: visible; transform: translateY(0); }
+        .notif-popup .notif-header { padding: 0 14px 10px; border-bottom: 1px solid var(--border-color); font-weight: 700; color: var(--text-primary); display: flex; justify-content: space-between; font-size: 14px; }
+        .notif-popup .notif-header .close { cursor: pointer; }
+        .notif-popup .notif-item { padding: 10px 14px; border-bottom: 1px solid var(--border-color); color: var(--text-primary); font-size: 13px; }
+        .notif-popup .notif-item .time { font-size: 10px; color: var(--text-muted); margin-top: 3px; }
+        .notif-popup .notif-item.unread { background: var(--wallet-bg); border-left: 3px solid #e74c6f; }
+        .notif-popup .empty { padding: 16px; text-align: center; color: var(--text-muted); font-size: 13px; }
+
+        .side-menu { position: fixed; top: 0; left: -280px; width: 260px; height: 100vh; background: var(--bg-card); box-shadow: var(--shadow-popup); z-index: 300; transition: 0.3s; padding: 16px 0; border-right: 1px solid var(--border-color); overflow-y: auto; }
+        .side-menu.active { left: 0; }
+        .side-menu .menu-header { padding: 12px 20px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+        .side-menu .menu-header .close { cursor: pointer; font-size: 20px; color: var(--text-muted); }
+        .side-menu .menu-item { display: flex; align-items: center; gap: 14px; padding: 12px 20px; cursor: pointer; transition: 0.3s; color: var(--text-primary); border: none; background: none; width: 100%; font-size: 14px; font-weight: 500; }
+        .side-menu .menu-item:hover { background: var(--hover-bg); padding-left: 26px; }
+        .side-menu .menu-item .icon { font-size: 18px; width: 28px; text-align: center; }
+        .side-menu .menu-divider { height: 1px; background: var(--border-color); margin: 6px 16px; }
+        .menu-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.3); z-index: 299; opacity: 0; visibility: hidden; transition: 0.3s; }
+        .menu-overlay.active { opacity: 1; visibility: visible; }
+
+        .content { padding: 24px; max-width: 600px; margin: 0 auto; }
+        .settings-card { background: var(--bg-card); border-radius: 16px; padding: 24px; box-shadow: var(--shadow); border: 1px solid var(--border-color); transition: 0.3s; }
+        .settings-card h1 { text-align: center; color: var(--text-primary); font-size: 24px; transition: 0.3s; }
+        .settings-card .sub { text-align: center; color: var(--text-muted); font-size: 13px; margin-bottom: 20px; transition: 0.3s; }
+
+        .setting-group { margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1px solid var(--border-color); transition: 0.3s; }
+        .setting-group:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        .setting-group .group-title { color: var(--text-primary); font-size: 14px; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; transition: 0.3s; }
+
+        .setting-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border-color); transition: 0.3s; }
+        .setting-row:last-child { border-bottom: none; }
+        .setting-row .left { display: flex; align-items: center; gap: 10px; }
+        .setting-row .left .icon { font-size: 18px; }
+        .setting-row .left .info .title { color: var(--text-primary); font-size: 13px; font-weight: 500; transition: 0.3s; }
+        .setting-row .left .info .desc { color: var(--text-muted); font-size: 11px; transition: 0.3s; }
+
+        .toggle-switch { width: 40px; height: 22px; background: var(--toggle-bg); border-radius: 11px; position: relative; cursor: pointer; transition: 0.3s; flex-shrink: 0; }
+        .toggle-switch.active { background: var(--toggle-active); }
+        .toggle-switch .knob { width: 16px; height: 16px; background: #fff; border-radius: 50%; position: absolute; top: 3px; left: 3px; transition: 0.3s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+        .toggle-switch.active .knob { left: 21px; }
+        .setting-row .status { font-size: 12px; font-weight: 500; color: var(--text-muted); min-width: 40px; text-align: right; transition: 0.3s; }
+        .setting-row .status.on { color: var(--success); }
+        .setting-row .status.off { color: var(--danger); }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--modal-bg);
+            backdrop-filter: blur(4px);
+            z-index: 500;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.active { display: flex; }
+
+        .modal {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 28px;
+            max-width: 480px;
+            width: 92%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-popup);
+            border: 1px solid var(--border-color);
+            animation: modalIn 0.3s ease;
+        }
+        @keyframes modalIn {
+            from { transform: scale(0.95) translateY(-20px); opacity: 0; }
+            to { transform: scale(1) translateY(0); opacity: 1; }
+        }
+
+        .modal h2 { color: var(--text-primary); text-align: center; font-size: 22px; margin-bottom: 4px; transition: 0.3s; }
+        .modal .modal-desc { text-align: center; color: var(--text-muted); font-size: 13px; margin-bottom: 16px; transition: 0.3s; }
+
+        .modal-theme-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin: 12px 0;
+        }
+        .modal-theme-option {
+            padding: 10px 6px;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: var(--wallet-bg);
+            color: var(--text-primary);
+        }
+        .modal-theme-option:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+        .modal-theme-option.active { border-color: var(--text-secondary); background: var(--text-secondary); color: #fff; }
+        .modal-theme-option .preview { width: 100%; height: 30px; border-radius: 6px; margin-bottom: 4px; border: 1px solid var(--border-color); }
+        .modal-theme-option .tname { font-size: 11px; font-weight: 500; }
+
+        .modal .close-modal-btn {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+            background: var(--wallet-bg);
+            color: var(--text-muted);
+            border: 1px solid var(--border-color);
+            margin-top: 12px;
+        }
+        .modal .close-modal-btn:hover { background: var(--hover-bg); }
+
+        .lang-select { padding: 6px 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px; background: var(--wallet-bg); color: var(--text-primary); cursor: pointer; outline: none; transition: 0.3s; }
+        .lang-select:focus { border-color: var(--text-secondary); }
+
+        .btn { padding: 10px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: 0.3s; border: none; width: 100%; }
+        .btn-admin { background: linear-gradient(135deg, #f5a623, #f7c948); color: #fff; }
+        .btn-admin:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(245,166,35,0.3); }
+        .btn-back { background: transparent; color: var(--text-secondary); border: 2px solid var(--border-color); margin-top: 12px; }
+        .btn-back:hover { background: var(--hover-bg); border-color: var(--text-secondary); }
+
+        .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); padding: 10px 20px; background: var(--bg-card); color: var(--text-primary); border-radius: 10px; box-shadow: var(--shadow-popup); border: 1px solid var(--border-color); z-index: 999; opacity: 0; transition: 0.5s; font-weight: 500; font-size: 13px; pointer-events: none; }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        @media (max-width: 600px) {
+            .header { padding: 10px 12px; }
+            .logo { font-size: 16px; }
+            .wallet { font-size: 11px; padding: 3px 10px; }
+            .wallet .vnd { font-size: 11px; }
+            .wallet .usd { font-size: 10px; }
+            .content { padding: 12px; }
+            .settings-card { padding: 16px; }
+            .modal-theme-grid { grid-template-columns: repeat(3, 1fr); }
+            .menu-text { display: none; }
+            .notif-popup { right: 8px; left: 8px; min-width: auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
+
+    <div class="side-menu" id="sideMenu">
+        <div class="menu-header">
+            <span style="font-weight:700;color:var(--text-primary);">📋 Menu</span>
+            <span class="close" onclick="closeMenu()">✕</span>
+        </div>
+        <button class="menu-item" onclick="goHome()"><span class="icon">🏠</span><span data-key="home">Trang chủ</span></button>
+        <button class="menu-item" onclick="goHistory()"><span class="icon">⏳</span><span data-key="history">Lịch sử</span></button>
+        <button class="menu-item" onclick="goTopup()"><span class="icon">💰</span><span data-key="topup">Nạp tiền</span></button>
+        <div class="menu-divider"></div>
+        <button class="menu-item" onclick="goSupport()"><span class="icon">🆘</span><span data-key="support">Hỗ trợ</span></button>
+    </div>
+
+    <header class="header">
+        <div class="header-left">
+            <div class="menu-icon" onclick="toggleMenu()">
+                <div><span class="bar"></span><span class="bar"></span><span class="bar"></span></div>
+                <span class="menu-text">MENU</span>
+            </div>
+            <div class="logo">KuanZ<span>Game</span></div>
+        </div>
+        <div class="header-right">
+            <div class="wallet">
+                <span class="vnd">💰 <span id="balanceAmount">0</span> VND</span>
+                <span class="usd">💵 <span id="balanceUSD">0.00</span> USD</span>
+            </div>
+            <div class="bell-icon" onclick="toggleNotif()">
+                <span>🔔</span>
+                <div class="bell-dot" id="notifDot"></div>
+            </div>
+            <div class="settings-wrapper">
+                <div class="dot-menu" onclick="togglePopup(event)">
+                    <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+                </div>
+                <div class="popup" id="settingsPopup">
+                    <button class="popup-item" onclick="goToProfile()">👤 <span data-key="profile">Thông tin</span></button>
+                    <button class="popup-item" onclick="goToSecurity()">🛡️ <span data-key="security">Bảo mật</span></button>
+                    <button class="popup-item" onclick="goToSettings()">⚙️ <span data-key="settings">Cài đặt</span></button>
+                    <div class="popup-divider"></div>
+                    <button class="popup-item logout" onclick="logout()">🚪 <span data-key="logout">Đăng xuất</span></button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="notif-popup" id="notifPopup">
+        <div class="notif-header"><span data-key="notif_title">📢 Thông báo</span><span class="close" onclick="toggleNotif()">✕</span></div>
+        <div id="notifList"><div class="empty" data-key="notif_empty">Chưa có thông báo</div></div>
+    </div>
+
+    <div class="content">
+        <div class="settings-card">
+            <h1>⚙️ <span data-key="settings_title">Cài đặt</span></h1>
+            <p class="sub" data-key="settings_sub">Tùy chỉnh trải nghiệm của bạn</p>
+
+            <div class="setting-group">
+                <div class="group-title">🎨 <span data-key="appearance">Giao diện</span></div>
+
+                <div class="setting-row">
+                    <div class="left"><span class="icon">🌙</span><div class="info"><div class="title" data-key="dark_mode">Chế độ tối</div><div class="desc" data-key="dark_mode_desc">Sáng/Tối</div></div></div>
+                    <div class="right"><span class="status" id="darkModeStatus" data-key="off">Tắt</span><div class="toggle-switch" id="darkModeToggle" onclick="toggleDarkMode()"><div class="knob"></div></div></div>
+                </div>
+
+                <div class="setting-row" style="cursor:pointer;" onclick="openThemeModal()">
+                    <div class="left"><span class="icon">🎨</span><div class="info"><div class="title" data-key="theme">Theme</div><div class="desc" data-key="theme_desc">Nhấn để chọn màu sắc</div></div></div>
+                    <div class="right"><span style="font-size:13px;font-weight:500;color:var(--text-primary);" id="currentThemeDisplay">Mặc định</span><span style="font-size:12px;color:var(--text-muted);margin-left:4px;">▾</span></div>
+                </div>
+            </div>
+
+            <div class="setting-group">
+                <div class="group-title">🔔 <span data-key="notifications">Thông báo</span></div>
+                <div class="setting-row">
+                    <div class="left"><span class="icon">🔕</span><div class="info"><div class="title" data-key="notif_toggle">Bật/Tắt</div><div class="desc" data-key="notif_toggle_desc">Nhận thông báo</div></div></div>
+                    <div class="right"><span class="status" id="notifStatus" data-key="on">Bật</span><div class="toggle-switch active" id="notifToggle" onclick="toggleNotification()"><div class="knob"></div></div></div>
+                </div>
+                <div class="setting-row">
+                    <div class="left"><span class="icon">👁️</span><div class="info"><div class="title" data-key="auto_view">Tự động xem</div><div class="desc" data-key="auto_view_desc">Đánh dấu đã đọc</div></div></div>
+                    <div class="right"><span class="status" id="autoViewStatus" data-key="on">Bật</span><div class="toggle-switch active" id="autoViewToggle" onclick="toggleAutoView()"><div class="knob"></div></div></div>
+                </div>
+            </div>
+
+            <div class="setting-group">
+                <div class="group-title">🌍 <span data-key="language_group">Ngôn ngữ</span></div>
+                <div class="setting-row">
+                    <div class="left"><span class="icon">🌐</span><div class="info"><div class="title" data-key="language">Ngôn ngữ</div><div class="desc" data-key="language_desc">Chọn ngôn ngữ</div></div></div>
+                    <div class="right">
+                        <select class="lang-select" id="langSelect" onchange="changeLanguage(this.value)">
+                            <option value="vi">🇻🇳 Tiếng Việt</option>
+                            <option value="en">🇬🇧 English</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="padding:8px 12px; background:var(--wallet-bg); border-radius:6px; border:1px solid var(--border-color); margin-top:6px;">
+                    <span style="color:var(--text-muted); font-size:12px;" data-key="current_lang">Ngôn ngữ hiện tại:</span>
+                    <span id="currentLangDisplay" style="color:var(--text-primary); font-weight:600; font-size:13px; margin-left:6px;">🇻🇳 Tiếng Việt</span>
+                </div>
+            </div>
+
+            <div class="setting-group" id="adminSection" style="display:none;">
+                <div class="group-title">👑 <span data-key="admin_group">Quản trị</span></div>
+                <button class="btn btn-admin" onclick="goToAdmin()"><span data-key="admin_btn">📊 Vào Admin</span></button>
+            </div>
+
+            <button class="btn btn-back" onclick="goHome()"><span data-key="back">← Quay lại</span></button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="themeModal">
+        <div class="modal">
+            <h2>🎨 <span data-key="theme_modal_title">Chọn Theme</span></h2>
+            <p class="modal-desc" data-key="theme_modal_desc">Chọn màu sắc giao diện yêu thích</p>
+            <div class="modal-theme-grid" id="themeModalGrid">
+                <div class="modal-theme-option" data-theme="default" onclick="selectThemeModal('default')">
+                    <div class="preview" style="background:linear-gradient(135deg,#f0f7ff,#ffffff);"></div>
+                    <span class="tname">Mặc định</span>
+                </div>
+                <div class="modal-theme-option" data-theme="galaxy" onclick="selectThemeModal('galaxy')">
+                    <div class="preview" style="background:linear-gradient(135deg,#0a0a1a,#1a1a3e);"></div>
+                    <span class="tname">Galaxy</span>
+                </div>
+                <div class="modal-theme-option" data-theme="ocean" onclick="selectThemeModal('ocean')">
+                    <div class="preview" style="background:linear-gradient(135deg,#0a1628,#0d2847);"></div>
+                    <span class="tname">Ocean</span>
+                </div>
+                <div class="modal-theme-option" data-theme="forest" onclick="selectThemeModal('forest')">
+                    <div class="preview" style="background:linear-gradient(135deg,#0a1a0a,#0d2a0d);"></div>
+                    <span class="tname">Forest</span>
+                </div>
+                <div class="modal-theme-option" data-theme="sunset" onclick="selectThemeModal('sunset')">
+                    <div class="preview" style="background:linear-gradient(135deg,#1a0a0a,#3e1a0a);"></div>
+                    <span class="tname">Sunset</span>
+                </div>
+                <div class="modal-theme-option" data-theme="cherry" onclick="selectThemeModal('cherry')">
+                    <div class="preview" style="background:linear-gradient(135deg,#1a0a12,#3e0a1a);"></div>
+                    <span class="tname">Cherry</span>
+                </div>
+                <div class="modal-theme-option" data-theme="neon" onclick="selectThemeModal('neon')">
+                    <div class="preview" style="background:linear-gradient(135deg,#0a0a0a,#1a1a1a);border-color:#00ff88;"></div>
+                    <span class="tname">Neon</span>
+                </div>
+                <div class="modal-theme-option" data-theme="lavender" onclick="selectThemeModal('lavender')">
+                    <div class="preview" style="background:linear-gradient(135deg,#1a0a2a,#2a1a3e);"></div>
+                    <span class="tname">Lavender</span>
+                </div>
+                <div class="modal-theme-option" data-theme="mint" onclick="selectThemeModal('mint')">
+                    <div class="preview" style="background:linear-gradient(135deg,#0a1a12,#0d2a1a);"></div>
+                    <span class="tname">Mint</span>
+                </div>
+                <div class="modal-theme-option" data-theme="coffee" onclick="selectThemeModal('coffee')">
+                    <div class="preview" style="background:linear-gradient(135deg,#1a0f0a,#2a1a12);"></div>
+                    <span class="tname">Coffee</span>
+                </div>
+                <div class="modal-theme-option" data-theme="dark" onclick="selectThemeModal('dark')">
+                    <div class="preview" style="background:linear-gradient(135deg,#1a1a2e,#16213e);"></div>
+                    <span class="tname">Dark</span>
+                </div>
+                <div class="modal-theme-option" data-theme="light" onclick="selectThemeModal('light')">
+                    <div class="preview" style="background:linear-gradient(135deg,#ffffff,#f0f0f0);"></div>
+                    <span class="tname">Light</span>
+                </div>
+            </div>
+            <button class="close-modal-btn" onclick="closeThemeModal()"><span data-key="theme_modal_close">Đóng</span></button>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCPDDRt520fSynXCGrr2aF-KvpnS_ZuIm8",
+            authDomain: "shop-c6777.firebaseapp.com",
+            databaseURL: "https://shop-c6777-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "shop-c6777",
+            storageBucket: "shop-c6777.firebasestorage.app",
+            messagingSenderId: "43186563268",
+            appId: "1:43186563268:web:0d392ba57039a919670191"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        const EXCHANGE_RATE = 25000;
+
+        const translations = {
+            vi: {
+                home: 'Trang chủ', history: 'Lịch sử', topup: 'Nạp tiền', support: 'Hỗ trợ',
+                profile: 'Thông tin', security: 'Bảo mật', settings: 'Cài đặt', logout: 'Đăng xuất',
+                notif_title: '📢 Thông báo', notif_empty: 'Chưa có thông báo',
+                settings_title: 'Cài đặt', settings_sub: 'Tùy chỉnh trải nghiệm của bạn',
+                appearance: 'Giao diện', dark_mode: 'Chế độ tối', dark_mode_desc: 'Sáng/Tối',
+                on: 'Bật', off: 'Tắt', theme: 'Theme', theme_desc: 'Nhấn để chọn màu sắc',
+                notifications: 'Thông báo', notif_toggle: 'Bật/Tắt', notif_toggle_desc: 'Nhận thông báo',
+                auto_view: 'Tự động xem', auto_view_desc: 'Đánh dấu đã đọc',
+                language_group: 'Ngôn ngữ', language: 'Ngôn ngữ', language_desc: 'Chọn ngôn ngữ',
+                current_lang: 'Ngôn ngữ hiện tại:',
+                admin_group: 'Quản trị', admin_btn: '📊 Vào Admin',
+                back: '← Quay lại',
+                theme_modal_title: 'Chọn Theme', theme_modal_desc: 'Chọn màu sắc giao diện yêu thích',
+                theme_modal_close: 'Đóng'
+            },
+            en: {
+                home: 'Home', history: 'History', topup: 'Top up', support: 'Support',
+                profile: 'Profile', security: 'Security', settings: 'Settings', logout: 'Logout',
+                notif_title: '📢 Notifications', notif_empty: 'No notifications',
+                settings_title: 'Settings', settings_sub: 'Customize your experience',
+                appearance: 'Appearance', dark_mode: 'Dark mode', dark_mode_desc: 'Light/Dark',
+                on: 'On', off: 'Off', theme: 'Theme', theme_desc: 'Tap to choose color',
+                notifications: 'Notifications', notif_toggle: 'On/Off', notif_toggle_desc: 'Receive notifications',
+                auto_view: 'Auto view', auto_view_desc: 'Mark as read',
+                language_group: 'Language', language: 'Language', language_desc: 'Select language',
+                current_lang: 'Current language:',
+                admin_group: 'Admin', admin_btn: '📊 Go Admin',
+                back: '← Back',
+                theme_modal_title: 'Choose Theme', theme_modal_desc: 'Choose your favorite color theme',
+                theme_modal_close: 'Close'
+            }
+        };
+
+        let lang = localStorage.getItem('lang') || 'vi';
+        let currentTheme = localStorage.getItem('theme_name') || 'default';
+
+        function applyLang() {
+            const data = translations[lang] || translations.vi;
+            document.querySelectorAll('[data-key]').forEach(el => {
+                const key = el.getAttribute('data-key');
+                if (data[key] !== undefined) {
+                    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                        el.placeholder = data[key];
+                    } else {
+                        el.textContent = data[key];
+                    }
+                }
+            });
+            document.getElementById('langSelect').value = lang;
+            document.getElementById('currentLangDisplay').textContent = lang === 'vi' ? '🇻🇳 Tiếng Việt' : '🇬🇧 English';
+            updateStatusTexts();
+        }
+
+        function updateStatusTexts() {
+            const isDark = localStorage.getItem('theme') === 'dark' || currentTheme === 'dark';
+            document.getElementById('darkModeStatus').textContent = isDark ? (lang === 'vi' ? 'Bật' : 'On') : (lang === 'vi' ? 'Tắt' : 'Off');
+            document.getElementById('darkModeStatus').className = 'status ' + (isDark ? 'on' : 'off');
+
+            const notif = localStorage.getItem('notifEnabled') !== 'false';
+            document.getElementById('notifStatus').textContent = notif ? (lang === 'vi' ? 'Bật' : 'On') : (lang === 'vi' ? 'Tắt' : 'Off');
+            document.getElementById('notifStatus').className = 'status ' + (notif ? 'on' : 'off');
+
+            const auto = localStorage.getItem('autoView') !== 'false';
+            document.getElementById('autoViewStatus').textContent = auto ? (lang === 'vi' ? 'Bật' : 'On') : (lang === 'vi' ? 'Tắt' : 'Off');
+            document.getElementById('autoViewStatus').className = 'status ' + (auto ? 'on' : 'off');
+        }
+
+        function applyTheme() {
+            const isDark = localStorage.getItem('theme') === 'dark' || currentTheme === 'dark';
+            document.body.classList.toggle('dark-mode', isDark);
+            document.body.className = document.body.className.replace(/theme-\w+/g, '');
+            if (currentTheme !== 'default' && currentTheme !== 'dark' && currentTheme !== 'light') {
+                document.body.classList.add('theme-' + currentTheme);
+            }
+            const darkToggle = document.getElementById('darkModeToggle');
+            if (darkToggle) darkToggle.classList.toggle('active', isDark);
+
+            const names = {
+                default: 'Mặc định', galaxy: 'Galaxy', ocean: 'Ocean',
+                forest: 'Forest', sunset: 'Sunset', cherry: 'Cherry',
+                neon: 'Neon', lavender: 'Lavender', mint: 'Mint',
+                coffee: 'Coffee', dark: 'Dark', light: 'Light'
+            };
+            const enNames = {
+                default: 'Default', galaxy: 'Galaxy', ocean: 'Ocean',
+                forest: 'Forest', sunset: 'Sunset', cherry: 'Cherry',
+                neon: 'Neon', lavender: 'Lavender', mint: 'Mint',
+                coffee: 'Coffee', dark: 'Dark', light: 'Light'
+            };
+            const displayName = lang === 'vi' ? (names[currentTheme] || 'Mặc định') : (enNames[currentTheme] || 'Default');
+            document.getElementById('currentThemeDisplay').textContent = displayName;
+
+            document.querySelectorAll('.modal-theme-option').forEach(el => {
+                el.classList.toggle('active', el.dataset.theme === currentTheme);
+            });
+        }
+
+        function showToast(msg) {
+            const el = document.getElementById('toast');
+            el.textContent = msg;
+            el.classList.add('show');
+            clearTimeout(el.timeout);
+            el.timeout = setTimeout(() => el.classList.remove('show'), 2000);
+        }
+
+        function openThemeModal() {
+            document.getElementById('themeModal').classList.add('active');
+            document.querySelectorAll('.modal-theme-option').forEach(el => {
+                el.classList.toggle('active', el.dataset.theme === currentTheme);
+            });
+        }
+
+        function closeThemeModal() {
+            document.getElementById('themeModal').classList.remove('active');
+        }
+
+        function selectThemeModal(theme) {
+            if (theme === 'dark') {
+                localStorage.setItem('theme', 'dark');
+                currentTheme = 'default';
+            } else if (theme === 'light') {
+                localStorage.setItem('theme', 'light');
+                currentTheme = 'default';
+            } else {
+                localStorage.setItem('theme', 'light');
+                currentTheme = theme;
+                localStorage.setItem('theme_name', theme);
+            }
+            applyTheme();
+            applyLang();
+            closeThemeModal();
+            showToast(lang === 'vi' ? '✅ Đã chọn theme!' : '✅ Theme selected!');
+        }
+
+        function toggleDarkMode() {
+            const isDark = localStorage.getItem('theme') === 'dark' || currentTheme === 'dark';
+            if (isDark) {
+                localStorage.setItem('theme', 'light');
+                currentTheme = localStorage.getItem('theme_name') || 'default';
+            } else {
+                localStorage.setItem('theme', 'dark');
+                currentTheme = 'default';
+            }
+            applyTheme();
+            applyLang();
+            showToast(lang === 'vi' ? '✅ Đã chuyển chế độ!' : '✅ Mode switched!');
+        }
+
+        function toggleNotification() {
+            const enabled = localStorage.getItem('notifEnabled') !== 'false';
+            localStorage.setItem('notifEnabled', enabled ? 'false' : 'true');
+            document.getElementById('notifToggle').classList.toggle('active');
+            applyLang();
+            showToast(enabled ? (lang === 'vi' ? '🔕 Đã tắt' : '🔕 Disabled') : (lang === 'vi' ? '🔔 Đã bật' : '🔔 Enabled'));
+        }
+
+        function toggleAutoView() {
+            const auto = localStorage.getItem('autoView') !== 'false';
+            localStorage.setItem('autoView', auto ? 'false' : 'true');
+            document.getElementById('autoViewToggle').classList.toggle('active');
+            applyLang();
+            showToast(auto ? (lang === 'vi' ? '👁️ Đã tắt' : '👁️ Disabled') : (lang === 'vi' ? '👁️ Đã bật' : '👁️ Enabled'));
+        }
+
+        function changeLanguage(l) {
+            lang = l;
+            localStorage.setItem('lang', l);
+            applyLang();
+            document.documentElement.lang = l;
+            showToast(lang === 'vi' ? '✅ Đã chuyển sang Tiếng Việt!' : '✅ Switched to English!');
+        }
+
+        auth.onAuthStateChanged((user) => {
+            if (!user) { window.location.replace('../Authenticator/login.html'); return; }
+
+            db.ref('users/' + user.uid + '/isAdmin').once('value', snap => {
+                if (snap.val() === true) document.getElementById('adminSection').style.display = 'block';
+            });
+
+            db.ref('users/' + user.uid + '/balance').on('value', snap => {
+                const balance = snap.val() || 0;
+                document.getElementById('balanceAmount').textContent = balance.toLocaleString('vi-VN');
+                const usd = balance / EXCHANGE_RATE;
+                document.getElementById('balanceUSD').textContent = usd.toFixed(2);
+            });
+
+            db.ref('notifications').on('value', snap => {
+                const notifs = snap.val();
+                const list = document.getElementById('notifList');
+                const dot = document.getElementById('notifDot');
+                if (notifs) {
+                    const keys = Object.keys(notifs).reverse();
+                    let html = '',
+                        hasUnread = false;
+                    keys.forEach(key => {
+                        const n = notifs[key];
+                        const isUnread = !n.readBy || !n.readBy[user.uid];
+                        if (isUnread) hasUnread = true;
+                        html += `<div class="notif-item ${isUnread?'unread':''}">${n.message}<div class="time">${new Date(n.timestamp).toLocaleString('vi-VN')}</div></div>`;
+                    });
+                    list.innerHTML = html;
+                    dot.classList.toggle('show', hasUnread && localStorage.getItem('notifEnabled') !== 'false');
+                } else {
+                    list.innerHTML = `<div class="empty">${lang === 'vi' ? 'Chưa có thông báo' : 'No notifications'}</div>`;
+                    dot.classList.remove('show');
+                }
+            });
+        });
+
+        function toggleMenu() { document.getElementById('sideMenu').classList.toggle('active');
+            document.getElementById('menuOverlay').classList.toggle('active'); }
+
+        function closeMenu() { document.getElementById('sideMenu').classList.remove('active');
+            document.getElementById('menuOverlay').classList.remove('active'); }
+
+        function togglePopup(e) { e.stopPropagation();
+            document.getElementById('settingsPopup').classList.toggle('active'); }
+        document.addEventListener('click', function(e) {
+            const popup = document.getElementById('settingsPopup');
+            const wrapper = document.querySelector('.settings-wrapper');
+            if (!wrapper.contains(e.target)) popup.classList.remove('active');
+        });
+
+        function toggleNotif() {
+            const popup = document.getElementById('notifPopup');
+            popup.classList.toggle('active');
+            const user = auth.currentUser;
+            if (user && localStorage.getItem('autoView') !== 'false') {
+                db.ref('notifications').once('value', snap => {
+                    const notifs = snap.val();
+                    if (notifs) Object.keys(notifs).forEach(key => db.ref('notifications/' + key + '/readBy/' + user.uid)
+                        .set(true));
+                });
+                document.getElementById('notifDot').classList.remove('show');
+            }
+        }
+
+        function goHome() { closeMenu();
+            window.location.href = '../index.html'; }
+
+        function goHistory() { closeMenu();
+            alert(lang === 'vi' ? '📜 Đang phát triển!' : '📜 Coming soon!'); }
+
+        function goTopup() { closeMenu();
+            alert(lang === 'vi' ? '💰 Đang phát triển!' : '💰 Coming soon!'); }
+
+        function goSupport() { closeMenu();
+            alert(lang === 'vi' ? '🆘 Đang phát triển!' : '🆘 Coming soon!'); }
+
+        function goToProfile() { window.location.href = 'profile.html'; }
+
+        function goToSecurity() { window.location.href = 'security.html'; }
+
+        function goToSettings() { window.location.href = 'settings.html'; }
+
+        function goToAdmin() { window.location.href = '../Authenticator/admin.html'; }
+
+        function logout() {
+            if (confirm(lang === 'vi' ? 'Đăng xuất?' : 'Logout?')) auth.signOut().then(() => window.location.replace(
+                '../Authenticator/login.html'));
+        }
+
+        document.getElementById('themeModal').addEventListener('click', function(e) {
+            if (e.target === this) closeThemeModal();
+        });
+
+        applyTheme();
+        applyLang();
+        document.getElementById('notifToggle').classList.toggle('active', localStorage.getItem('notifEnabled') !== 'false');
+        document.getElementById('autoViewToggle').classList.toggle('active', localStorage.getItem('autoView') !== 'false');
+        console.log('✅ Settings loaded!');
+    </script>
+</body>
+</html>
