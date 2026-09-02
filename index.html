@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KuanZGame.Store</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/index.css">
+
+</head>
+<body>
+
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">⏳ Đang tải dữ liệu...</div>
+    </div>
+
+    <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
+
+    <div class="side-menu" id="sideMenu">
+        <div class="menu-header">
+            <span style="font-weight:700;color:var(--text-primary);"><i class="fas fa-bars"></i> Menu</span>
+            <span class="close" onclick="closeMenu()"><i class="fas fa-times"></i></span>
+        </div>
+        <button class="menu-item" onclick="goHome()"><span class="icon"><i class="fas fa-home"></i></span>Trang chủ</button>
+        <button class="menu-item" onclick="goHistory()"><span class="icon"><i class="fas fa-history"></i></span>Lịch sử</button>
+        <button class="menu-item" onclick="goTopup()"><span class="icon"><i class="fas fa-coins"></i></span>Nạp tiền</button>
+        <button class="menu-item" onclick="goEarn()"><span class="icon"><i class="fas fa-money-bill-wave"></i></span>Kiếm tiền</button>
+        <div class="menu-divider"></div>
+        <button class="menu-item" onclick="goSupport()"><span class="icon"><i class="fas fa-headset"></i></span>Hỗ trợ</button>
+    </div>
+
+    <header class="header">
+        <div class="header-left">
+            <div class="menu-icon" onclick="toggleMenu()">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+            <div class="logo"></div>
+        </div>
+        <div class="header-right">
+            <div class="wallet-container">
+                <div class="wallet-icon-box"><i class="fas fa-wallet"></i></div>
+                <div class="wallet-info">
+                    <span class="wallet-label">Số dư</span>
+                    <span class="wallet-balance"><span id="balanceAmount">0</span> <span>VND</span></span>
+                </div>
+            </div>
+            <div class="bell-icon" onclick="toggleNotif()">
+                <div class="bell-dot" id="notifDot"></div>
+                <i class="fas fa-bell"></i>
+            </div>
+            <div class="settings-wrapper">
+                <div class="dot-menu" onclick="togglePopup(event)">
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                </div>
+                <div class="popup" id="settingsPopup">
+                    <button class="popup-item" onclick="goToProfile()"><i class="fas fa-user"></i> Trang cá nhân</button>
+                    <button class="popup-item" onclick="goToSecurity()"><i class="fas fa-shield-alt"></i> Bảo mật tài khoản</button>
+                    <button class="popup-item" onclick="goToBalance()"><i class="fas fa-coins"></i> Biến động số dư</button>
+                    <button class="popup-item" onclick="goToSettings()"><i class="fas fa-cog"></i> Cài đặt giao diện</button>
+                    <div class="popup-divider"></div>
+                    <button class="popup-item logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Đăng xuất</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="notif-popup" id="notifPopup">
+        <div class="notif-header"><span><i class="fas fa-bullhorn"></i> Thông báo</span><span class="close" onclick="toggleNotif()"><i class="fas fa-times"></i></span></div>
+        <div id="notifList"><div class="empty"><i class="far fa-bell-slash"></i> Chưa có thông báo</div></div>
+    </div>
+
+    <div class="order-popup-overlay" id="orderPopup">
+        <div class="order-popup">
+            <button class="close-btn" onclick="closeOrderPopup()"><i class="fas fa-times"></i></button>
+            <div class="popup-header">
+                <div class="product-icon" id="popupProductIcon">📦</div>
+                <h3 id="popupProductName">Sản phẩm</h3>
+                <div class="product-price-display" id="popupProductPrice">0 VND</div>
+            </div>
+            <div class="balance-display">
+                <span class="label"><i class="fas fa-wallet"></i> Số dư của bạn</span>
+                <span class="value" id="popupBalance">0 VND</span>
+            </div>
+            <div class="quantity-control">
+                <button class="qty-btn" id="qtyMinus" onclick="changeQuantity(-1)"><i class="fas fa-minus"></i></button>
+                <span class="qty-number" id="qtyNumber">1</span>
+                <button class="qty-btn" id="qtyPlus" onclick="changeQuantity(1)"><i class="fas fa-plus"></i></button>
+            </div>
+            <div class="voucher-popup-section">
+                <input type="text" id="popupVoucherInput" placeholder="Mã giảm giá" />
+                <button class="apply-voucher-btn" onclick="applyPopupVoucher()"><i class="fas fa-ticket-alt"></i> Áp</button>
+                <span id="popupVoucherStatus"></span>
+            </div>
+            <div class="total-row"><span>Tổng</span><span id="popupTotalPrice">0 VND</span></div>
+            <button class="btn-confirm" id="btnConfirmOrder" onclick="confirmOrderDirect()">
+                <i class="fas fa-shopping-cart"></i> Xác nhận mua
+            </button>
+        </div>
+    </div>
+
+    <div class="order-popup-overlay result-popup" id="resultPopup">
+        <div class="order-popup">
+            <button class="close-btn" onclick="closeResultPopup()"><i class="fas fa-times"></i></button>
+            <div class="popup-header">
+                <span class="status-icon" id="resultStatusIcon">✅</span>
+                <h3 id="resultStatusTitle">Thành công!</h3>
+                <div class="order-code" id="resultOrderCode"><i class="fas fa-key"></i> <strong id="resultOrderCodeText">******</strong></div>
+            </div>
+            <div class="info-grid" id="resultInfoGrid"></div>
+            <div id="resultProductDetail"></div>
+            <div class="total-row">Tổng: <span id="resultTotal">0</span> VND</div>
+            <button class="btn-done" onclick="closeResultPopup()"><i class="fas fa-check"></i> Đóng</button>
+        </div>
+    </div>
+
+    <div class="content">
+        <div class="intro-card">
+            <div class="intro-top">
+                <div class="intro-top-left">
+                    <div class="intro-icon">🎮</div>
+                    <div>
+                        <div class="intro-title">Chào mừng đến với KuanZGame.Store</div>
+                        <div class="intro-sub">Chọn mục sản phẩm để xem sản phẩm</div>
+                    </div>
+                </div>
+            </div>
+            <div class="intro-body">
+                <p class="intro-lead">Chọn một mục sản phẩm bên dưới để xem danh sách sản phẩm.</p>
+                <div class="intro-section">
+                    <div class="intro-section-title"><i class="fas fa-box"></i> Hướng dẫn</div>
+                    <ul class="intro-list">
+                        <li>Quay lại toàn bộ quá trình mua hàng để làm bằng chứng đối chiếu sản phẩm.</li>
+                        <li>Nếu phát hiện sai sót, hãy liên hệ Admin để được hỗ trợ đổi/trả sớm nhất.</li>
+                    </ul>
+                </div>
+                <div class="intro-section">
+                    <div class="intro-section-title"><i class="fas fa-exclamation-triangle"></i> Lưu ý</div>
+                    <ul class="intro-list">
+                        <li>Không chia sẻ thông tin tài khoản shop cho bất kỳ ai.</li>
+                        <li>Đọc kỹ mô tả sản phẩm trước khi giao dịch.</li>
+                    </ul>
+                </div>
+                <div class="intro-footer">Cảm ơn bạn đã tin tưởng và đồng hành 🔥</div>
+            </div>
+        </div>
+
+        <div class="category-section" id="categorySection">
+            <div class="category-section-header">
+                <h2><i class="fas fa-folder"></i> Mục sản phẩm <span id="categoryCount"></span></h2>
+            </div>
+            
+            <div class="category-grid" id="categoryGrid">
+                <div class="product-empty" style="grid-column:1/-1;padding:16px;">
+                    <p>Đang tải danh sách mục...</p>
+                </div>
+            </div>
+
+            <div id="productContainer"></div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="assets/js/firebase.js"></script>
+<script src="assets/js/index.js"></script>
+</body>
+</html>
