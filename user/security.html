@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bảo mật - KuanZGame.Store</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../assets/css/base.css">
+<link rel="stylesheet" href="../assets/css/users-security.css">
+
+</head>
+<body>
+
+    <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
+    <div class="side-menu" id="sideMenu">
+        <div class="menu-header"><span style="font-weight:700;color:var(--text-primary);"><i class="fas fa-bars"></i> Menu</span><span class="close" onclick="closeMenu()"><i class="fas fa-times"></i></span></div>
+        <button class="menu-item" onclick="goHome()"><span class="icon"><i class="fas fa-home"></i></span>Trang chủ</button>
+        <button class="menu-item" onclick="goHistory()"><span class="icon"><i class="fas fa-history"></i></span>Lịch sử</button>
+        <button class="menu-item" onclick="goTopup()"><span class="icon"><i class="fas fa-coins"></i></span>Nạp tiền</button>
+        <button class="menu-item" onclick="goEarn()"><span class="icon"><i class="fas fa-money-bill-wave"></i></span>Kiếm tiền</button>
+        <div class="menu-divider"></div>
+        <button class="menu-item" onclick="goSupport()"><span class="icon"><i class="fas fa-headset"></i></span>Hỗ trợ</button>
+    </div>
+
+    <header class="header">
+        <div class="header-left">
+            <div class="menu-icon" onclick="toggleMenu()">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+            <div class="logo"></div>
+        </div>
+        <div class="header-right">
+            <div class="wallet-container">
+                <div class="wallet-icon-box"><i class="fas fa-wallet"></i></div>
+                <div class="wallet-info">
+                    <span class="wallet-label">Số dư</span>
+                    <span class="wallet-balance"><span id="balanceAmount">0</span> <span>VND</span></span>
+                </div>
+            </div>
+            <div class="bell-icon" onclick="toggleNotif()"><div class="bell-dot" id="notifDot"></div><i class="fas fa-bell"></i></div>
+            <div class="settings-wrapper">
+                <div class="dot-menu" onclick="togglePopup(event)">
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                </div>
+                <div class="popup" id="settingsPopup">
+                    <button class="popup-item" onclick="goToProfile()"><i class="fas fa-user"></i> Trang cá nhân</button>
+                    <button class="popup-item" onclick="goToSecurity()"><i class="fas fa-shield-alt"></i> Bảo mật tài khoản</button>
+                    <button class="popup-item" onclick="goToBalance()"><i class="fas fa-coins"></i> Biến động số dư</button>
+                    <button class="popup-item" onclick="goToSettings()"><i class="fas fa-cog"></i> Cài đặt giao diện</button>
+                    <div class="popup-divider"></div>
+                    <button class="popup-item logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Đăng xuất</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="notif-popup" id="notifPopup">
+        <div class="notif-header"><span><i class="fas fa-bullhorn"></i> Thông báo</span><span class="close" onclick="toggleNotif()"><i class="fas fa-times"></i></span></div>
+        <div id="notifList"><div class="empty"><i class="far fa-bell-slash"></i> Chưa có thông báo</div></div>
+    </div>
+
+    <div class="content">
+        <div class="security-card">
+            <!-- Header -->
+            <div class="security-header">
+                <div class="icon-circle"><i class="fas fa-shield-halved"></i></div>
+                <div class="info">
+                    <h1>Bảo mật</h1>
+                    <div class="sub">Quản lý bảo mật tài khoản của bạn</div>
+                </div>
+            </div>
+
+            <div id="message" class="message"></div>
+
+            <!-- Đổi mật khẩu -->
+            <div class="section-title"><i class="fas fa-key"></i> Đổi mật khẩu</div>
+            <form id="changePasswordForm">
+                <div class="form-group">
+                    <label><i class="fas fa-lock"></i> Mật khẩu hiện tại</label>
+                    <input type="password" id="currentPassword" placeholder="Nhập mật khẩu cũ" required>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-key"></i> Mật khẩu mới</label>
+                    <input type="password" id="newPassword" placeholder="Tối thiểu 6 ký tự" required minlength="6">
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-check-double"></i> Xác nhận mật khẩu</label>
+                    <input type="password" id="confirmPassword" placeholder="Nhập lại mật khẩu" required>
+                </div>
+                <button type="submit" class="btn-change"><i class="fas fa-sync"></i> Cập nhật mật khẩu</button>
+            </form>
+
+            <!-- 2FA -->
+            <div class="section-title"><i class="fas fa-shield"></i> Xác thực 2 lớp</div>
+            <div class="twofa-row" onclick="toggleTwoFA()">
+                <div class="left">
+                    <div class="icon-box"><i class="fas fa-qrcode"></i></div>
+                    <div class="info">
+                        <div class="title">Google Authenticator</div>
+                        <div class="desc" id="twofaStatusDesc">Chưa kích hoạt</div>
+                    </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <span class="twofa-status off" id="twofaStatusBadge">Tắt</span>
+                    <div class="toggle-switch" id="twofaToggle" onclick="event.stopPropagation(); toggleTwoFA()">
+                        <div class="knob"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lịch sử đăng nhập -->
+            <div class="section-title"><i class="fas fa-history"></i> Lịch sử đăng nhập</div>
+            <div class="login-history-box" id="loginHistoryBox">
+                <div id="loginHistoryList">
+                    <div class="login-history-empty">
+                        <span class="icon"><i class="fas fa-spinner fa-spin"></i></span>
+                        Đang tải lịch sử...
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn-back" onclick="goToSettings()"><i class="fas fa-arrow-left"></i> Quay lại cài đặt</button>
+        </div>
+    </div>
+
+    <!-- 2FA MODALS -->
+    <div class="modal-overlay" id="twofaModal">
+        <div class="modal">
+            <h3><i class="fas fa-qrcode"></i> Xác thực 2 lớp</h3>
+            <p class="modal-desc">Quét mã với Google Authenticator hoặc nhập thủ công</p>
+            <div class="secret-box">
+                <span class="secret-key" id="secretKeyDisplay">Đang tạo...</span>
+                <button class="copy-btn" id="copyBtn" onclick="copySecret()"><i class="fas fa-copy"></i> Sao chép</button>
+            </div>
+            <div class="otp-input-row">
+                <input type="text" id="otpInput" placeholder="000000" maxlength="6" inputmode="numeric" autocomplete="off" />
+                <button class="paste-btn" onclick="pasteOTP()"><i class="fas fa-paste"></i> Dán</button>
+            </div>
+            <div class="error-msg" id="otpError"><i class="fas fa-times-circle"></i> Mã OTP không đúng!</div>
+            <div class="attempts">Còn <span id="attemptCount">3</span> lần thử</div>
+            <div class="modal-actions">
+                <button class="btn-confirm" id="btnVerifyOTP" onclick="verifyOTP()"><i class="fas fa-check"></i> Xác nhận</button>
+                <button class="btn-cancel" onclick="closeOTPModal()"><i class="fas fa-times"></i> Hủy</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="twofaOffModal">
+        <div class="modal">
+            <h3><i class="fas fa-unlock"></i> Tắt xác thực 2 lớp</h3>
+            <p class="modal-desc">Nhập mã OTP để xác nhận tắt</p>
+            <div class="otp-input-row">
+                <input type="text" id="otpOffInput" placeholder="000000" maxlength="6" inputmode="numeric" autocomplete="off" />
+                <button class="paste-btn" onclick="pasteOTPOff()"><i class="fas fa-paste"></i> Dán</button>
+            </div>
+            <div class="error-msg" id="otpOffError"><i class="fas fa-times-circle"></i> Mã OTP không đúng!</div>
+            <div class="attempts">Còn <span id="offAttemptCount">3</span> lần thử</div>
+            <div class="modal-actions">
+                <button class="btn-danger" id="btnTurnOff" onclick="turnOff2FA()"><i class="fas fa-unlock"></i> Tắt</button>
+                <button class="btn-cancel" onclick="closeTwoFAOff()"><i class="fas fa-times"></i> Đóng</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="../assets/js/firebase.js"></script>
+<script src="../assets/js/users-security.js"></script>
+</body>
+</html>

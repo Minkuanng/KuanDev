@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cài đặt - KuanZGame.Store</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../assets/css/base.css">
+<link rel="stylesheet" href="../assets/css/users-settings.css">
+
+</head>
+<body>
+
+    <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
+    <div class="side-menu" id="sideMenu">
+        <div class="menu-header">
+            <span style="font-weight:700;color:var(--text-primary);"><i class="fas fa-bars"></i> Menu</span>
+            <span class="close" onclick="closeMenu()"><i class="fas fa-times"></i></span>
+        </div>
+        <button class="menu-item" onclick="goHome()"><span class="icon"><i class="fas fa-home"></i></span>Trang chủ</button>
+        <button class="menu-item" onclick="goHistory()"><span class="icon"><i class="fas fa-history"></i></span>Lịch sử</button>
+        <button class="menu-item" onclick="goTopup()"><span class="icon"><i class="fas fa-coins"></i></span>Nạp tiền</button>
+        <button class="menu-item" onclick="goEarn()"><span class="icon"><i class="fas fa-money-bill-wave"></i></span>Kiếm tiền</button>
+        <div class="menu-divider"></div>
+        <button class="menu-item" onclick="goSupport()"><span class="icon"><i class="fas fa-headset"></i></span>Hỗ trợ</button>
+    </div>
+
+    <header class="header">
+        <div class="header-left">
+            <div class="menu-icon" onclick="toggleMenu()">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+            <div class="logo"></div>
+        </div>
+        <div class="header-right">
+            <div class="wallet-container">
+                <div class="wallet-icon-box"><i class="fas fa-wallet"></i></div>
+                <div class="wallet-info">
+                    <span class="wallet-label">Số dư</span>
+                    <span class="wallet-balance"><span id="balanceAmount">0</span> <span>VND</span></span>
+                </div>
+            </div>
+            <div class="bell-icon" onclick="toggleNotif()">
+                <i class="fas fa-bell"></i>
+                <div class="bell-dot" id="notifDot"></div>
+            </div>
+            <div class="settings-wrapper">
+                <div class="dot-menu" onclick="togglePopup(event)">
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                </div>
+                <div class="popup" id="settingsPopup">
+                    <button class="popup-item" onclick="goToProfile()"><i class="fas fa-user"></i> Trang cá nhân</button>
+                    <button class="popup-item" onclick="goToSecurity()"><i class="fas fa-shield-alt"></i> Bảo mật tài khoản</button>
+                    <button class="popup-item" onclick="goToBalance()"><i class="fas fa-coins"></i> Biến động số dư</button>
+                    <button class="popup-item" onclick="goToSettings()"><i class="fas fa-cog"></i> Cài đặt giao diện</button>
+                    <div class="popup-divider"></div>
+                    <button class="popup-item logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Đăng xuất</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="notif-popup" id="notifPopup">
+        <div class="notif-header">
+            <span><i class="fas fa-bullhorn"></i> Thông báo</span>
+            <span class="close" onclick="toggleNotif()"><i class="fas fa-times"></i></span>
+        </div>
+        <div id="notifList"><div class="empty"><i class="far fa-bell-slash"></i> Chưa có thông báo</div></div>
+    </div>
+
+    <div class="content">
+        <div class="settings-card">
+            <!-- Header -->
+            <div class="settings-header">
+                <div class="icon-circle"><i class="fas fa-cog"></i></div>
+                <div class="info">
+                    <h1>Cài đặt</h1>
+                    <div class="sub">Tùy chỉnh trải nghiệm của bạn</div>
+                </div>
+            </div>
+
+            <!-- Giao diện -->
+            <div class="setting-group">
+                <div class="group-title">
+                    <i class="fas fa-palette"></i> Giao diện
+                    <span class="badge">Màu sắc</span>
+                </div>
+
+                <div class="setting-row" onclick="toggleDarkMode()">
+                    <div class="left">
+                        <div class="icon-box"><i class="fas fa-moon"></i></div>
+                        <div class="info">
+                            <div class="title">Chế độ tối</div>
+                            <div class="desc">Sáng / Tối</div>
+                        </div>
+                    </div>
+                    <div class="right">
+                        <span class="status" id="darkModeStatus">Tắt</span>
+                        <div class="toggle-switch" id="darkModeToggle">
+                            <div class="knob"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="setting-row" onclick="openThemeModal()">
+                    <div class="left">
+                        <div class="icon-box"><i class="fas fa-paint-brush"></i></div>
+                        <div class="info">
+                            <div class="title">Theme màu sắc</div>
+                            <div class="desc">Chọn màu sắc yêu thích</div>
+                        </div>
+                    </div>
+                    <div class="right">
+                        <span style="font-size:12px;font-weight:500;color:var(--text-primary);" id="currentThemeDisplay">Mặc định</span>
+                        <span class="arrow"><i class="fas fa-chevron-right"></i></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Thông báo -->
+            <div class="setting-group">
+                <div class="group-title">
+                    <i class="fas fa-bell"></i> Thông báo
+                    <span class="badge">Cài đặt</span>
+                </div>
+
+                <div class="setting-row" onclick="toggleNotification()">
+                    <div class="left">
+                        <div class="icon-box"><i class="fas fa-bell-slash"></i></div>
+                        <div class="info">
+                            <div class="title">Bật/Tắt thông báo</div>
+                            <div class="desc">Nhận thông báo từ hệ thống</div>
+                        </div>
+                    </div>
+                    <div class="right">
+                        <span class="status" id="notifStatus">Bật</span>
+                        <div class="toggle-switch active" id="notifToggle">
+                            <div class="knob"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="setting-row" onclick="toggleAutoView()">
+                    <div class="left">
+                        <div class="icon-box"><i class="fas fa-eye"></i></div>
+                        <div class="info">
+                            <div class="title">Tự động đánh dấu đã đọc</div>
+                            <div class="desc">Tự động đánh dấu thông báo đã xem</div>
+                        </div>
+                    </div>
+                    <div class="right">
+                        <span class="status" id="autoViewStatus">Bật</span>
+                        <div class="toggle-switch active" id="autoViewToggle">
+                            <div class="knob"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ngôn ngữ -->
+            <div class="setting-group">
+                <div class="group-title">
+                    <i class="fas fa-globe"></i> Ngôn ngữ
+                    <span class="badge">Ngôn ngữ</span>
+                </div>
+
+                <div class="setting-row">
+                    <div class="left">
+                        <div class="icon-box"><i class="fas fa-language"></i></div>
+                        <div class="info">
+                            <div class="title">Ngôn ngữ hiển thị</div>
+                            <div class="desc">Chọn ngôn ngữ</div>
+                        </div>
+                    </div>
+                    <div class="right">
+                        <select class="lang-select" id="langSelect" onchange="changeLanguage(this.value)">
+                            <option value="vi">🇻🇳 Tiếng Việt</option>
+                            <option value="en">🇬🇧 English</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="lang-display">
+                    <i class="fas fa-check-circle" style="color:var(--success);"></i>
+                    Ngôn ngữ hiện tại: <span id="currentLangDisplay">🇻🇳 Tiếng Việt</span>
+                </div>
+            </div>
+
+            <!-- Quản trị -->
+            <div class="setting-group" id="adminSection" style="display:none;">
+                <div class="group-title">
+                    <i class="fas fa-crown" style="color:var(--warning);"></i> Quản trị
+                    <span class="badge" style="background:var(--warning);color:#fff;">Admin</span>
+                </div>
+                <button class="btn-admin" onclick="goToAdmin()">
+                    <i class="fas fa-chart-bar"></i> Vào trang quản trị
+                </button>
+            </div>
+
+            <!-- Back Button -->
+            <button class="btn-back" onclick="goHome()">
+                <i class="fas fa-arrow-left"></i> Quay lại trang chủ
+            </button>
+        </div>
+    </div>
+
+    <!-- THEME MODAL -->
+    <div class="modal-overlay" id="themeModal">
+        <div class="modal">
+            <h2><i class="fas fa-palette"></i> Chọn Theme</h2>
+            <p class="modal-desc">Chọn màu sắc giao diện yêu thích</p>
+            <div class="theme-grid" id="themeModalGrid">
+                <div class="theme-option" data-theme="default" onclick="selectThemeModal('default')">
+                    <div class="preview" style="background:linear-gradient(135deg,#f0f7ff,#ffffff);"></div>
+                    <span class="tname">Mặc định</span>
+                </div>
+                <div class="theme-option" data-theme="galaxy" onclick="selectThemeModal('galaxy')">
+                    <div class="preview" style="background:linear-gradient(135deg,#0a0a1a,#1a1a3e);"></div>
+                    <span class="tname">Galaxy</span>
+                </div>
+                <div class="theme-option" data-theme="ocean" onclick="selectThemeModal('ocean')">
+                    <div class="preview" style="background:linear-gradient(135deg,#0a1628,#0d2847);"></div>
+                    <span class="tname">Ocean</span>
+                </div>
+                <div class="theme-option" data-theme="forest" onclick="selectThemeModal('forest')">
+                    <div class="preview" style="background:linear-gradient(135deg,#0a1a0a,#0d2a0d);"></div>
+                    <span class="tname">Forest</span>
+                </div>
+                <div class="theme-option" data-theme="sunset" onclick="selectThemeModal('sunset')">
+                    <div class="preview" style="background:linear-gradient(135deg,#1a0a0a,#3e1a0a);"></div>
+                    <span class="tname">Sunset</span>
+                </div>
+                <div class="theme-option" data-theme="cherry" onclick="selectThemeModal('cherry')">
+                    <div class="preview" style="background:linear-gradient(135deg,#1a0a12,#3e0a1a);"></div>
+                    <span class="tname">Cherry</span>
+                </div>
+                <div class="theme-option" data-theme="neon" onclick="selectThemeModal('neon')">
+                    <div class="preview" style="background:linear-gradient(135deg,#0a0a0a,#1a1a1a);border-color:#00ff88;"></div>
+                    <span class="tname">Neon</span>
+                </div>
+                <div class="theme-option" data-theme="lavender" onclick="selectThemeModal('lavender')">
+                    <div class="preview" style="background:linear-gradient(135deg,#1a0a2a,#2a1a3e);"></div>
+                    <span class="tname">Lavender</span>
+                </div>
+                <div class="theme-option" data-theme="mint" onclick="selectThemeModal('mint')">
+                    <div class="preview" style="background:linear-gradient(135deg,#0a1a12,#0d2a1a);"></div>
+                    <span class="tname">Mint</span>
+                </div>
+                <div class="theme-option" data-theme="coffee" onclick="selectThemeModal('coffee')">
+                    <div class="preview" style="background:linear-gradient(135deg,#1a0f0a,#2a1a12);"></div>
+                    <span class="tname">Coffee</span>
+                </div>
+                <div class="theme-option" data-theme="dark" onclick="selectThemeModal('dark')">
+                    <div class="preview" style="background:linear-gradient(135deg,#1a1a2e,#16213e);"></div>
+                    <span class="tname">Dark</span>
+                </div>
+                <div class="theme-option" data-theme="light" onclick="selectThemeModal('light')">
+                    <div class="preview" style="background:linear-gradient(135deg,#ffffff,#f0f0f0);"></div>
+                    <span class="tname">Light</span>
+                </div>
+            </div>
+            <button class="close-modal-btn" onclick="closeThemeModal()"><i class="fas fa-times"></i> Đóng</button>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="../assets/js/firebase.js"></script>
+<script src="../assets/js/users-settings.js"></script>
+</body>
+</html>
