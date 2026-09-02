@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bypass Checker - KuanZGame.Store</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/assets-bypass-checker.css">
+
+</head>
+<body>
+    <div class="container">
+        <span class="icon-big">🔗</span>
+        <h2>Bypass Link Checker</h2>
+        <p class="sub">Xác nhận bạn đã vượt link thành công</p>
+
+        <div class="info-box">
+            <div class="label"><i class="fas fa-link"></i> Link cần vượt</div>
+            <div class="value" id="displayLink">Đang tải...</div>
+        </div>
+        <div class="info-box">
+            <div class="label"><i class="fas fa-coins"></i> Tiền nhận được</div>
+            <div class="value amount-display" id="displayAmount">+0 VND</div>
+        </div>
+
+        <div id="statusMessage" class="status-box"></div>
+
+        <div class="status-box pending" id="autoClaimBox" style="display:block;">
+            ⏳ Đang tự động xác nhận lượt vượt và cộng 300đ...
+        </div>
+        <button class="btn-check" id="btnCheck" style="display:none"></button>
+
+        <div class="cooldown-text" id="cooldownText"></div>
+
+        <button class="btn-back" onclick="goBack()"><i class="fas fa-arrow-left"></i> Quay lại trang chủ</button>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="../js/firebase.js"></script>
+<script src="../js/assets-bypass-checker.js"></script>
+</body>
+</html>
