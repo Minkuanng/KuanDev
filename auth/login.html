@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng Nhập - KuanZGame.Store</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <link rel="stylesheet" href="../assets/css/base.css">
+<link rel="stylesheet" href="../assets/css/authenticator-login.css">
+
+</head>
+<body>
+    <div class="container">
+        <h2>🔐 Đăng Nhập</h2>
+        <p class="subtitle">Chào mừng bạn trở lại!</p>
+        <div id="message" class="message"></div>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label>👤 Users / 📧 Email</label>
+                <input type="text" id="loginInput" placeholder="Nhập tên người dùng hoặc email" required>
+            </div>
+            <div class="form-group">
+                <label>🔑 Mật khẩu</label>
+                <div class="password-wrapper">
+                    <input type="password" id="password" placeholder="Nhập mật khẩu" required>
+                    <button type="button" class="toggle-password" id="togglePassword">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                    </button>
+                </div>
+                <div class="forgot-password-link">
+                    <a onclick="window.location.href='forgot-password'">Quên mật khẩu?</a>
+                </div>
+            </div>
+
+            <div class="terms-section">
+                <label class="terms-checkbox">
+                    <input type="checkbox" id="termsCheckbox">
+                    <span class="terms-text">
+                        Tôi đồng ý với 
+                        <span class="link" onclick="event.preventDefault(); window.location.href='../assets/html/terms-of-service'">Điều khoản</span>
+                        và 
+                        <span class="link-policy" onclick="event.preventDefault(); window.location.href='../assets/html/privacy-policy'">Chính sách</span>
+                        của chúng tôi
+                    </span>
+                </label>
+                <div class="terms-error" id="termsError">⚠️ Vui lòng đồng ý với Điều khoản và Chính sách để tiếp tục!</div>
+            </div>
+
+            <button type="submit" class="btn-primary" id="loginBtn">🚀 Đăng Nhập</button>
+        </form>
+
+        <div class="links">
+            <a onclick="window.location.href='signup'">📝 Đăng ký tài khoản</a>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="twofaModal">
+        <div class="modal">
+            <h3>🔐 Xác thực 2 lớp</h3>
+            <p class="modal-desc">Nhập mã OTP từ Google Authenticator để hoàn tất đăng nhập</p>
+            <input type="text" class="otp-input" id="otpInput" placeholder="000000" maxlength="6" inputmode="numeric" autocomplete="off">
+            <div class="otp-error" id="otpError">❌ Mã OTP không đúng! Vui lòng thử lại.</div>
+            <div class="attempts-text">Còn <span id="attemptCount">3</span> lần thử</div>
+            <button class="btn-verify" id="btnVerifyOTP" onclick="verifyOTP()">✅ Xác nhận</button>
+            <button class="btn-cancel" onclick="closeOTPModal()">❌ Hủy đăng nhập</button>
+        </div>
+    </div>
+
+    <script src="../assets/js/firebase.js"></script>
+<script src="../assets/js/authenticator-login.js"></script>
+</body>
+</html>
