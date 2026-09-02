@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hỗ trợ - KuanZGame.Store</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js">
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../assets/css/base.css">
+<link rel="stylesheet" href="../assets/css/pages-support.css">
+
+</head>
+<body>
+
+    <!-- LOADING -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">⏳ Đang tải...</div>
+    </div>
+
+    <!-- MENU OVERLAY -->
+    <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
+
+    <!-- SIDE MENU -->
+    <div class="side-menu" id="sideMenu">
+        <div class="menu-header">
+            <span style="font-weight:700;color:var(--text-primary);"><i class="fas fa-bars"></i> Menu</span>
+            <span class="close" onclick="closeMenu()"><i class="fas fa-times"></i></span>
+        </div>
+        <button class="menu-item" onclick="goHome()"><span class="icon"><i class="fas fa-home"></i></span>Trang chủ</button>
+        <button class="menu-item" onclick="goHistory()"><span class="icon"><i class="fas fa-history"></i></span>Lịch sử</button>
+        <button class="menu-item" onclick="goTopup()"><span class="icon"><i class="fas fa-coins"></i></span>Nạp tiền</button>
+        <button class="menu-item" onclick="goEarn()"><span class="icon"><i class="fas fa-money-bill-wave"></i></span>Kiếm tiền</button>
+        <div class="menu-divider"></div>
+        <button class="menu-item" onclick="goSupport()"><span class="icon"><i class="fas fa-headset"></i></span>Hỗ trợ</button>
+    </div>
+
+    <!-- HEADER -->
+    <header class="header">
+        <div class="header-left">
+            <div class="menu-icon" onclick="toggleMenu()">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+            <div class="logo"></div>
+        </div>
+        <div class="header-right">
+            <div class="wallet-container">
+                <div class="wallet-icon-box"><i class="fas fa-wallet"></i></div>
+                <div class="wallet-info">
+                    <span class="wallet-label">Số dư</span>
+                    <span class="wallet-balance"><span id="balanceAmount">0</span> <span>VND</span></span>
+                </div>
+            </div>
+            <div class="bell-icon" onclick="toggleNotif()">
+                <div class="bell-dot" id="notifDot"></div>
+                <i class="fas fa-bell"></i>
+            </div>
+            <div class="settings-wrapper">
+                <div class="dot-menu" onclick="togglePopup(event)">
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                </div>
+                <!-- ===== POPUP ĐÃ SỬA ĐƯỜNG DẪN ===== -->
+                <div class="popup" id="settingsPopup">
+                    <button class="popup-item" onclick="goToProfile()"><i class="fas fa-user"></i> Trang cá nhân</button>
+                    <button class="popup-item" onclick="goToSecurity()"><i class="fas fa-shield-alt"></i> Bảo mật tài khoản</button>
+                    <button class="popup-item" onclick="goToBalance()"><i class="fas fa-coins"></i> Biến động số dư</button>
+                    <button class="popup-item" onclick="goToSettings()"><i class="fas fa-cog"></i> Cài đặt giao diện</button>
+                    <div class="popup-divider"></div>
+                    <button class="popup-item logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Đăng xuất</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- NOTIFICATION POPUP -->
+    <div class="notif-popup" id="notifPopup">
+        <div class="notif-header">
+            <span><i class="fas fa-bullhorn"></i> Thông báo</span>
+            <span class="close" onclick="toggleNotif()"><i class="fas fa-times"></i></span>
+        </div>
+        <div id="notifList"><div class="empty"><i class="far fa-bell-slash"></i> Chưa có thông báo</div></div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content">
+        <div class="chat-container">
+            <!-- User List (Admin only) -->
+            <div class="user-list" id="userList">
+                <div class="list-header">
+                    <span><i class="fas fa-users"></i> Người dùng</span>
+                    <span class="count" id="userCount">0</span>
+                </div>
+                <div class="list-search">
+                    <input type="text" id="userSearch" placeholder="🔍 Tìm người dùng..." oninput="filterUsers()">
+                </div>
+                <div class="users-scroll" id="usersScroll">
+                    <div class="empty-users">
+                        <span class="icon"><i class="fas fa-spinner fa-spin"></i></span>
+                        Đang tải...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Box -->
+            <div class="chat-box" id="chatBox">
+                <div class="chat-header">
+                    <div class="left">
+                        <div class="avatar" id="chatAvatar">💬</div>
+                        <div class="info">
+                            <div class="name" id="chatName">Chọn người dùng</div>
+                            <div class="status" id="chatStatus">Chọn một người dùng để bắt đầu chat</div>
+                        </div>
+                    </div>
+                    <div class="right">
+                        <button class="clear-btn" onclick="clearChat()" title="Xóa tin nhắn">
+                            <i class="fas fa-trash-alt"></i> Xóa chat
+                        </button>
+                    </div>
+                </div>
+
+                <div class="chat-messages" id="chatMessages">
+                    <div class="empty-chat">
+                        <span class="icon">💬</span>
+                        <div class="text">Chọn người dùng để bắt đầu trò chuyện</div>
+                        <div class="sub">Tin nhắn sẽ được hiển thị tại đây</div>
+                    </div>
+                </div>
+
+                <div class="chat-input">
+                    <button class="emoji-btn" onclick="toggleEmoji()" title="Thêm biểu tượng cảm xúc">😊</button>
+                    <input type="text" id="chatInput" placeholder="Nhập tin nhắn..." onkeydown="if(event.key==='Enter') sendMessage()">
+                    <button class="send-btn" onclick="sendMessage()"><i class="fas fa-paper-plane"></i> Gửi</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="../assets/js/firebase.js"></script>
+<script src="../assets/js/pages-support.js"></script>
+</body>
+</html>
